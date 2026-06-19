@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sV -sC --script smb-security-mode,ms17-010,smb-vuln-ms17-010 -p 22,53,80,88,135,139,389,443,445,636,1433,3268,3269,3389 10.10.10.0/24" start="1746475200" startstr="Tue May  6 08:00:00 2025" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="14" services="22,53,80,88,135,139,389,443,445,636,1433,3268,3269,3389"/>
+<verbose level="0"/>
+<debugging level="0"/>
+
+<host starttime="1746475210" endtime="1746475260">
+<status state="up" reason="echo-reply" reason_ttl="128"/>
+<address addr="10.10.10.1" addrtype="ipv4"/>
+<address addr="14:18:77:AB:12:01" addrtype="mac" vendor="Dell Inc."/>
+<hostnames>
+<hostname name="srv-dc01.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="53">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="domain" product="Microsoft DNS" version="10.0.17763 (Windows Server 2019)" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="88">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="kerberos-sec" product="Microsoft Windows Kerberos" ostype="Windows" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="135">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="msrpc" product="Microsoft Windows RPC" ostype="Windows" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="139">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="netbios-ssn" product="Microsoft Windows netbios-ssn" ostype="Windows" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="389">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ldap" product="Microsoft Windows Active Directory LDAP" extrainfo="Domain: corp.local, Site: Default-First-Site-Name" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="445">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="microsoft-ds" product="Windows Server 2019 microsoft-ds" extrainfo="CORP" method="probed" conf="10"/>
+<script id="smb-security-mode" output="&#xa;  account_used: guest&#xa;  authentication_level: user&#xa;  challenge_response: supported&#xa;  message_signing: required"/>
+<script id="ms17-010" output="Host does not appear vulnerable to MS17-010"/>
+</port>
+<port protocol="tcp" portid="636">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ldapssl" product="Microsoft Windows Active Directory LDAP (TLS)" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="3268">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="msft-gc" product="Microsoft Windows Active Directory LDAP" extrainfo="Global Catalog" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="3389">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ms-wbt-server" product="Microsoft Terminal Services" ostype="Windows" method="probed" conf="10"/>
+<script id="rdp-enum-encryption" output="&#xa;  Security layer&#xa;    CredSSP (NLA): SUCCESS&#xa;  RDP Encryption level: Client Compatible"/>
+</port>
+</ports>
+<os>
+<osmatch name="Microsoft Windows Server 2019" accuracy="97">
+<osclass type="general purpose" vendor="Microsoft" osfamily="Windows" osgen="2019" accuracy="97"/>
+</osmatch>
+</os>
+</host>
+
+<host starttime="1746475270" endtime="1746475300">
+<status state="up" reason="echo-reply" reason_ttl="128"/>
+<address addr="10.10.10.2" addrtype="ipv4"/>
+<address addr="14:18:77:AB:12:02" addrtype="mac" vendor="Dell Inc."/>
+<hostnames>
+<hostname name="srv-fs01.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="135">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="139">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="netbios-ssn" product="Microsoft Windows netbios-ssn" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="445">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="microsoft-ds" product="Windows Server 2019 microsoft-ds" extrainfo="CORP" method="probed" conf="10"/>
+<script id="smb-security-mode" output="&#xa;  account_used: guest&#xa;  authentication_level: user&#xa;  challenge_response: supported&#xa;  message_signing: disabled (dangerous, but default)"/>
+<script id="ms17-010" output="&#xa;VULNERABLE:&#xa;  Remote Code Execution vulnerability in Microsoft SMBv1 servers (ms17-010)&#xa;    State: VULNERABLE&#xa;    IDs:  CVE:CVE-2017-0143&#xa;    Risk factor: HIGH&#xa;      A critical remote code execution vulnerability exists in Microsoft SMBv1&#xa;      servers (ms17-010).&#xa;    Disclosure date: 2017-03-14&#xa;    References:&#xa;      https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-0143"/>
+</port>
+<port protocol="tcp" portid="1433">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ms-sql-s" product="Microsoft SQL Server" version="15.00.4153.01" extrainfo="sp0" method="probed" conf="10"/>
+<script id="ms-sql-info" output="&#xa;  10.10.10.2:1433: &#xa;    Version: &#xa;      name: Microsoft SQL Server 2019 RTM CU14&#xa;      number: 15.00.4153.01&#xa;      Product: Microsoft SQL Server 2019&#xa;      Service pack level: RTM&#xa;      Post-SP patches applied: CU14&#xa;    TCP port: 1433"/>
+</port>
+<port protocol="tcp" portid="3389">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/>
+</port>
+</ports>
+<os>
+<osmatch name="Microsoft Windows Server 2019" accuracy="96">
+<osclass type="general purpose" vendor="Microsoft" osfamily="Windows" osgen="2019" accuracy="96"/>
+</osmatch>
+</os>
+</host>
+
+<host starttime="1746475310" endtime="1746475330">
+<status state="up" reason="echo-reply" reason_ttl="128"/>
+<address addr="10.10.10.10" addrtype="ipv4"/>
+<address addr="3C:D9:2B:11:22:10" addrtype="mac" vendor="HP Inc."/>
+<hostnames>
+<hostname name="ws-user01.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="135">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="msrpc" product="Microsoft Windows RPC" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="139">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="netbios-ssn" product="Microsoft Windows netbios-ssn" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="445">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="microsoft-ds" product="Windows 10 microsoft-ds" extrainfo="CORP" method="probed" conf="10"/>
+<script id="smb-security-mode" output="&#xa;  account_used: guest&#xa;  authentication_level: user&#xa;  challenge_response: supported&#xa;  message_signing: disabled (dangerous, but default)"/>
+<script id="ms17-010" output="Host does not appear vulnerable to MS17-010"/>
+</port>
+</ports>
+<os>
+<osmatch name="Microsoft Windows 10 21H2" accuracy="95">
+<osclass type="general purpose" vendor="Microsoft" osfamily="Windows" osgen="10" accuracy="95"/>
+</osmatch>
+</os>
+</host>
+
+<host starttime="1746475340" endtime="1746475360">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="10.10.10.20" addrtype="ipv4"/>
+<address addr="3C:D9:2B:77:88:20" addrtype="mac" vendor="HP Inc."/>
+<hostnames>
+<hostname name="printer-floor2.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="HP LaserJet P3015 http config" method="probed" conf="10"/>
+<script id="http-title" output="HP LaserJet P3015 - Status"/>
+<script id="http-auth" output="No authentication required"/>
+</port>
+<port protocol="tcp" portid="443">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="https" product="HP LaserJet HTTPS" method="probed" conf="10"/>
+<script id="ssl-cert" output="&#xa;  Subject: commonName=HP LaserJet P3015/organizationName=HP/countryName=US&#xa;  Issuer: commonName=HP LaserJet P3015/organizationName=HP/countryName=US&#xa;  Public Key type: rsa&#xa;  Public Key bits: 1024&#xa;  Signature Algorithm: sha1WithRSAEncryption&#xa;  Not valid before: 2012-01-01T00:00:00&#xa;  Not valid after:  2030-01-01T00:00:00&#xa;  MD5:   a3:b4:2d:fd:eb:5c:e2:d4&#xa;  SHA-1: 2c:f4:9c:32:23:ff:59:f8:4a:b1:2c:f3:89:ac:10:2d"/>
+</port>
+<port protocol="tcp" portid="515">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="printer" product="HP JetDirect lpd" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="9100">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="jetdirect" product="HP JetDirect" method="probed" conf="10"/>
+</port>
+</ports>
+</host>
+
+<runstats>
+<finished time="1746475400" timestr="Tue May  6 08:03:20 2025" elapsed="200.00" summary="Nmap done at Tue May  6 08:03:20 2025; 254 IP addresses (4 hosts up) scanned in 200.00 seconds"/>
+<hosts up="4" down="250" total="254"/>
+</runstats>
+</nmaprun>

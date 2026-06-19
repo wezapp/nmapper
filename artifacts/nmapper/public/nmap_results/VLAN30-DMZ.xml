@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sV -sC --script http-title,http-server-header,ssl-cert,smtp-commands,ftp-anon -p 21,22,25,80,443,465,587,993,995,8080,8443 172.16.30.0/24" start="1746478800" startstr="Tue May  6 09:00:00 2025" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="11" services="21,22,25,80,443,465,587,993,995,8080,8443"/>
+<verbose level="0"/>
+<debugging level="0"/>
+
+<!-- Nginx reverse proxy / Load balancer -->
+<host starttime="1746478810" endtime="1746478850">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="172.16.30.10" addrtype="ipv4"/>
+<address addr="00:50:56:AB:10:01" addrtype="mac" vendor="VMware"/>
+<hostnames>
+<hostname name="proxy-dmz.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="22">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="ssh" product="OpenSSH" version="8.9p1" extrainfo="Ubuntu Linux; protocol 2.0" ostype="Linux" method="probed" conf="10"/>
+<script id="ssh-hostkey" output="&#xa;  3072 3a:b4:2d:fd:eb:5c:e2:d4:2c:f4:9c:32:23:ff:59:f8 (RSA)&#xa;  256 9f:1c:4a:e4:da:ac:1f:07:d7:36:c5:ab:b1:2c:f3:89 (ECDSA)&#xa;  256 c9:11:ac:10:2d:01:4b:c3:9f:c1:2d:f6:36:38:0f:6f (ED25519)"/>
+</port>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="nginx" version="1.24.0" method="probed" conf="10"/>
+<script id="http-title" output="301 Moved Permanently"/>
+<script id="http-server-header" output="nginx/1.24.0"/>
+</port>
+<port protocol="tcp" portid="443">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="https" product="nginx" version="1.24.0" method="probed" conf="10"/>
+<script id="http-title" output="Corporate Portal - Login"/>
+<script id="http-server-header" output="nginx/1.24.0"/>
+<script id="ssl-cert" output="&#xa;  Subject: commonName=corp.example.com/organizationName=CORP SA/countryName=FR&#xa;  Subject Alternative Name: DNS:corp.example.com, DNS:www.corp.example.com, DNS:portal.corp.example.com&#xa;  Issuer: commonName=R3/organizationName=Let's Encrypt/countryName=US&#xa;  Public Key type: ec&#xa;  Public Key bits: 256&#xa;  Signature Algorithm: sha256WithRSAEncryption&#xa;  Not valid before: 2025-02-01T12:00:00&#xa;  Not valid after:  2025-05-02T12:00:00&#xa;  MD5:   f3:a1:89:2d:4b:c7:e0:55:12:98:34:ab:cd:ef:01:23&#xa;  SHA-1: 2a:3b:4c:5d:6e:7f:80:91:a2:b3:c4:d5:e6:f7:08:19:2a:3b:4c:5d"/>
+</port>
+</ports>
+<os>
+<osmatch name="Linux 5.15" accuracy="96">
+<osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="5.X" accuracy="96"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Apache web application server -->
+<host starttime="1746478860" endtime="1746478900">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="172.16.30.11" addrtype="ipv4"/>
+<address addr="00:50:56:AB:10:02" addrtype="mac" vendor="VMware"/>
+<hostnames>
+<hostname name="web-app01.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="22">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="ssh" product="OpenSSH" version="8.9p1" extrainfo="Ubuntu Linux; protocol 2.0" method="probed" conf="10"/>
+<script id="ssh-hostkey" output="&#xa;  3072 b7:c2:3d:1e:fc:7a:6c:f3:e5:3d:5e:0b:43:34:ab:67:29 (RSA)&#xa;  256 0a:2d:5b:f5:eb:1d:08:e8:48:c7:47:a6:c2:3d:04:9a (ECDSA)"/>
+</port>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Apache httpd" version="2.4.57" extrainfo="(Ubuntu)" method="probed" conf="10"/>
+<script id="http-title" output="Apache2 Ubuntu Default Page: It works"/>
+<script id="http-server-header" output="Apache/2.4.57 (Ubuntu)"/>
+<script id="http-methods" output="Supported Methods: OPTIONS HEAD GET POST"/>
+</port>
+<port protocol="tcp" portid="443">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="https" product="Apache httpd" version="2.4.57" extrainfo="(Ubuntu)" method="probed" conf="10"/>
+<script id="ssl-cert" output="&#xa;  Subject: commonName=web-app01.corp.local&#xa;  Issuer: commonName=CORP-Internal-CA&#xa;  Public Key type: rsa&#xa;  Public Key bits: 2048&#xa;  Not valid before: 2024-01-01T00:00:00&#xa;  Not valid after:  2026-01-01T00:00:00"/>
+</port>
+<port protocol="tcp" portid="8080">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Apache Tomcat" version="10.1.18" method="probed" conf="10"/>
+<script id="http-title" output="Apache Tomcat/10.1.18"/>
+<script id="http-server-header" output="Apache-Coyote/1.1"/>
+</port>
+</ports>
+<os>
+<osmatch name="Linux 5.15" accuracy="95">
+<osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="5.X" accuracy="95"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Postfix mail server -->
+<host starttime="1746478910" endtime="1746478960">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="172.16.30.12" addrtype="ipv4"/>
+<address addr="00:50:56:AB:10:03" addrtype="mac" vendor="VMware"/>
+<hostnames>
+<hostname name="mail.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="22">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="ssh" product="OpenSSH" version="9.2p1" extrainfo="Debian 12; protocol 2.0" method="probed" conf="10"/>
+<script id="ssh-hostkey" output="&#xa;  3072 d1:e3:4f:2a:7c:8b:f5:a6:1b:9c:e8:47:22:cc:90:5d (RSA)&#xa;  256 1a:0c:3e:f4:cb:2d:aa:10:f8:e7:56:b5:c3:4e:f5:9b (ECDSA)"/>
+</port>
+<port protocol="tcp" portid="25">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="smtp" product="Postfix smtpd" method="probed" conf="10"/>
+<script id="smtp-commands" output="mail.corp.local, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, AUTH PLAIN LOGIN, ENHANCEDSTATUSCODES, 8BITMIME, DSN, CHUNKING"/>
+<script id="smtp-open-relay" output="Server is NOT an open relay"/>
+</port>
+<port protocol="tcp" portid="465">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="smtps" product="Postfix smtpd (SSL)" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="587">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="smtp" product="Postfix smtpd (submission)" method="probed" conf="10"/>
+<script id="smtp-commands" output="mail.corp.local, PIPELINING, SIZE 10240000, ETRN, STARTTLS, AUTH PLAIN LOGIN, ENHANCEDSTATUSCODES, 8BITMIME, DSN, CHUNKING"/>
+</port>
+<port protocol="tcp" portid="993">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="imaps" product="Dovecot imapd" method="probed" conf="10"/>
+<script id="ssl-cert" output="&#xa;  Subject: commonName=mail.corp.local/organizationName=CORP SA&#xa;  Issuer: commonName=CORP-Internal-CA&#xa;  Not valid before: 2024-03-01T00:00:00&#xa;  Not valid after:  2026-03-01T00:00:00"/>
+</port>
+<port protocol="tcp" portid="995">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="pop3s" product="Dovecot pop3d" method="probed" conf="10"/>
+</port>
+</ports>
+<os>
+<osmatch name="Linux 6.1" accuracy="94">
+<osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="6.X" accuracy="94"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Serveur FTP legacy -->
+<host starttime="1746478970" endtime="1746479010">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="172.16.30.13" addrtype="ipv4"/>
+<address addr="00:50:56:AB:10:04" addrtype="mac" vendor="VMware"/>
+<hostnames>
+<hostname name="ftp-legacy.corp.local" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="21">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="ftp" product="ProFTPD" version="1.3.5e" method="probed" conf="10"/>
+<script id="ftp-anon" output="Anonymous FTP login allowed (FTP code 230)&#xa;drwxr-xr-x   2 ftp      ftp          4096 Jan 15 09:23 incoming&#xa;drwxr-xr-x   3 ftp      ftp          4096 Mar  5 14:51 pub"/>
+<script id="ftp-bounce" output="bounce working!"/>
+<script id="ftp-syst" output="UNIX Type: L8"/>
+</port>
+<port protocol="tcp" portid="22">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="ssh" product="OpenSSH" version="7.4p1" extrainfo="Debian 9+deb9u7; protocol 2.0" method="probed" conf="10"/>
+<script id="ssh-hostkey" output="&#xa;  2048 c7:a2:4f:3b:8d:e1:9f:6c:a5:2b:7e:1c:4d:56:f9:23 (RSA)&#xa;  256 3e:0b:1f:4c:7a:d5:9e:f8:c2:6b:0a:5c:3d:2e:f1:84 (ECDSA)"/>
+</port>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Apache httpd" version="2.2.34" extrainfo="(Debian)" method="probed" conf="10"/>
+<script id="http-title" output="FTP Repository Index"/>
+<script id="http-server-header" output="Apache/2.2.34 (Debian)"/>
+</port>
+</ports>
+<os>
+<osmatch name="Linux 4.9" accuracy="90">
+<osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="4.X" accuracy="90"/>
+</osmatch>
+</os>
+</host>
+
+<runstats>
+<finished time="1746479100" timestr="Tue May  6 09:05:00 2025" elapsed="300.00" summary="Nmap done at Tue May  6 09:05:00 2025; 254 IP addresses (4 hosts up) scanned in 300.00 seconds"/>
+<hosts up="4" down="250" total="254"/>
+</runstats>
+</nmaprun>

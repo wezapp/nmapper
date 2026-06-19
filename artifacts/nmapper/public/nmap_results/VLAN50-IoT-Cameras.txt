@@ -1,0 +1,112 @@
+# Nmap 7.94 scan initiated Tue May  6 09:30:00 2025 as: nmap -sV -sC --script http-title,rtsp-url-brute,snmp-info,bacnet-info -p 21,22,23,80,161,443,554,8000,8080,8554,9100,47808 -oN VLAN50-IoT-Cameras.txt 192.168.50.0/24
+Nmap scan report for 192.168.50.10
+Host is up (0.00061s latency).
+Not shown: 65530 closed tcp ports (reset)
+PORT    STATE SERVICE VERSION
+80/tcp  open  http    Axis network camera httpd
+|_http-title: AXIS M3106-L Mk II
+|_http-server-header: Apache
+| http-auth:
+|   HTTP Auth: Digest realm=AXIS_00408C123456
+|_  Accounts: root (password required)
+443/tcp open  https   Axis network camera httpd
+| ssl-cert:
+|   Subject: commonName=AXIS M3106-L Mk II/organizationName=Axis Communications AB
+|   Not valid before: 2020-01-01T00:00:00
+|_  Not valid after:  2030-01-01T00:00:00
+554/tcp open  rtsp    AXIS M3106-L Mk II
+| rtsp-url-brute:
+|   discovered:
+|_    rtsp://192.168.50.10/axis-media/media.amp
+MAC Address: 00:40:8C:12:34:56 (Axis Communications AB)
+
+Nmap scan report for 192.168.50.11
+Host is up (0.00073s latency).
+Not shown: 65528 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+23/tcp   open  telnet  Hikvision IP camera telnetd
+| telnet-encryption:
+|_  Telnet server does not support encryption
+80/tcp   open  http    Hikvision IP camera http config
+|_http-title: Network Camera - Login
+|_http-server-header: webserver
+| http-auth:
+|_  HTTP Auth: Basic realm=Network Camera (default credentials: admin/12345)
+443/tcp  open  https   Hikvision IP camera https
+| ssl-cert:
+|   Subject: commonName=Hikvision
+|   Issuer: commonName=Hikvision
+|   Not valid before: 2015-01-01T00:00:00
+|_  Not valid after:  2035-01-01T00:00:00
+554/tcp  open  rtsp    Hikvision IP camera
+| rtsp-url-brute:
+|   discovered:
+|_    rtsp://192.168.50.11/Streaming/Channels/1
+8000/tcp open  http    Hikvision SDK service
+|_http-title: 200 OK
+MAC Address: A4:14:37:AA:BB:11 (Hikvision Digital Technology Co.Ltd.)
+
+Nmap scan report for 192.168.50.12
+Host is up (0.00052s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT    STATE SERVICE VERSION
+80/tcp  open  http    Bosch IP camera httpd
+|_http-title: FLEXIDOME IP indoor 5000 IR
+|_http-server-header: Bosch Security Systems
+| http-auth:
+|_  HTTP Auth: Basic realm=FLEXIDOME_IP
+443/tcp open  https   Bosch IP camera
+| ssl-cert:
+|   Subject: commonName=FLEXIDOME IP indoor 5000 IR
+|   Issuer: commonName=Bosch Security Systems
+|   Not valid before: 2021-06-01T00:00:00
+|_  Not valid after:  2031-06-01T00:00:00
+554/tcp open  rtsp
+| rtsp-url-brute:
+|   discovered:
+|_    rtsp://192.168.50.12/rtsp_tunnel
+MAC Address: 00:04:63:CC:DD:12 (Bosch Security Systems BV)
+
+Nmap scan report for 192.168.50.20
+Host is up (0.00044s latency).
+Not shown: 65529 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+80/tcp   open  http    Kyocera printer http config
+|_http-title: KYOCERA ECOSYS M3645dn - Status
+|_http-server-header: KM-MFP-http
+| http-auth:
+|_  HTTP Auth: No authentication required
+161/tcp  open  snmp    SNMPv1 (public)
+| snmp-info:
+|   enterprise: Kyocera
+|   sysDescr: Kyocera ECOSYS M3645dn 2QT_2000.003.113 2019-07-31
+|_  sysObjectID: .1.3.6.1.4.1.1347
+443/tcp  open  https   Kyocera printer https
+9100/tcp open  jetdirect HP JetDirect
+MAC Address: 00:C0:EE:EE:55:20 (Kyocera Corporation)
+
+Nmap scan report for 192.168.50.30
+Host is up (0.00038s latency).
+Not shown: 65534 closed tcp ports (reset)
+PORT      STATE  SERVICE VERSION
+80/tcp    open   http    lighttpd 1.4.53
+|_http-title: Honeywell Excel Web II
+|_http-server-header: lighttpd/1.4.53
+| http-auth:
+|_  HTTP Auth: No authentication required (default credentials active)
+161/tcp   open   snmp    SNMPv2c (public)
+| snmp-info:
+|   enterprise: Honeywell
+|   sysDescr: Honeywell Excel Web II XL50A v4.04.14 - BACnet/IP Building Controller
+|_  sysName: BACnet-GW-Floor1
+47808/tcp open   bacnet  Honeywell BACnet/IP
+| bacnet-info:
+|   Vendor ID: 19 (Honeywell, Inc.)
+|   Vendor Name: Honeywell, Inc.
+|   Model Name: Excel Web II XL50A
+|   Application Software Version: 4.04.14
+|   Object Identifier: 4194303
+|_  Object Name: BACnet-GW-Floor1
+MAC Address: 00:60:35:CC:77:30 (Honeywell International)
+
+# Nmap done at Tue May  6 09:35:22 2025 -- 5 IP addresses (5 hosts up) scanned in 322.16 seconds

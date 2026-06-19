@@ -1,0 +1,121 @@
+# Nmap 7.94 scan initiated Tue May  6 09:20:00 2025 as: nmap -sV -sC --script http-title,http-server-header,elasticsearch-info,ssl-cert -p 22,80,443,1514,3000,5044,5601,9090,9093,9200,9300,5432,1433 -oN VLAN40-Supervision.txt 10.40.0.0/24
+Nmap scan report for 10.40.0.10
+Host is up (0.00041s latency).
+Not shown: 65529 closed tcp ports (reset)
+PORT     STATE SERVICE    VERSION
+22/tcp   open  ssh        OpenSSH 8.9p1 Ubuntu 3ubuntu0.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 3a:b4:2d:fd:eb:5c:e2:d4:2c:f4:9c:32:23:ff:59:f8 (RSA)
+|   256 9f:1c:4a:e4:da:ac:1f:07:d7:36:c5:ab:b1:2c:f3:89 (ECDSA)
+|_  256 c9:11:ac:10:2d:01:4b:c3:9f:c1:2d:f6:36:38:0f:6f (ED25519)
+3000/tcp open  http       Grafana httpd 10.2.3
+|_http-title: Grafana
+|_http-server-header: Grafana
+9090/tcp open  http       Prometheus 2.48.1
+|_http-title: Prometheus Time Series Collection and Processing Server
+|_http-server-header: Prometheus/2.48.1
+| http-auth:
+|_  HTTP Auth: Basic realm=Prometheus
+MAC Address: 00:50:56:A1:10:01 (VMware)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Nmap scan report for 10.40.0.11
+Host is up (0.00038s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE       VERSION
+22/tcp   open  ssh           OpenSSH 8.9p1 Ubuntu 3ubuntu0.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 d4:e2:5f:3c:8b:f4:a5:1a:8b:9b:e7:46:21:ba:79:4e (RSA)
+|_  256 0e:1d:5c:f4:7b:d4:9d:af:12:f7:e6:b4:c2:3d:04:9a (ECDSA)
+9200/tcp open  http          Elasticsearch REST API 8.11.3 (name: es-node-01; cluster: elk-cluster; Lucene 9.8.0)
+| elasticsearch-info:
+|   clusterName: elk-cluster
+|   clusterUUID: Xk3jA9FtTzGmRpLWvYOuCQ
+|   name: es-node-01
+|   nodeName: es-node-01
+|   version: 8.11.3
+|   luceneVersion: 9.8.0
+|   minimumWireCompatibilityVersion: 7.17.0
+|_  Security: Disabled (no authentication required)
+9300/tcp open  vrace?
+|_http-title: 400 Bad Request
+MAC Address: 00:50:56:A1:10:02 (VMware)
+
+Nmap scan report for 10.40.0.12
+Host is up (0.00032s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   3072 1c:a2:3e:f5:4b:8d:e0:9a:6f:1a:9b:f8:47:23:cd:91:5e (RSA)
+|_  256 4f:0b:1d:4c:7b:d5:9e:f7:c1:6b:0a:5c:3e:2d:f2:84 (ECDSA)
+5601/tcp open  http    Kibana 8.11.3
+|_http-title: Kibana
+|_http-server-header: Kibana
+MAC Address: 00:50:56:A1:10:03 (VMware)
+
+Nmap scan report for 10.40.0.13
+Host is up (0.00055s latency).
+Not shown: 65530 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.4p1 Debian 10+deb9u7 (protocol 2.0)
+| ssh-hostkey:
+|   2048 c7:a2:4f:3b:8d:e1:9f:6c:a5:2b:7e:1c:4d:56:f9:23 (RSA)
+|_  256 3e:0b:1f:4c:7a:d5:9e:f8:c2:6b:0a:5c:3d:2e:f1:84 (ECDSA)
+80/tcp   open  http    nginx 1.14.2
+|_http-title: Centreon - IT & Network Monitoring
+|_http-server-header: nginx/1.14.2
+161/tcp  open  snmp    SNMPv2c (public)
+| snmp-info:
+|   enterprise: net-snmp
+|   engineIDFormat: unknown
+|   engineIDData: 5c6f6f70696e67000000000000000000
+|   snmpEngineBoots: 4821
+|_  snmpEngineTime: 47 days, 11:23:07
+1514/tcp open  shell?
+MAC Address: 00:50:56:A1:10:04 (VMware)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Nmap scan report for 10.40.0.20
+Host is up (0.00029s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE    VERSION
+22/tcp   open  ssh        OpenSSH 9.2p1 Debian 2+deb12u1 (protocol 2.0)
+| ssh-hostkey:
+|   3072 e5:f3:a2:7d:1c:8b:5a:9e:0b:af:28:47:c3:f5:d2:9a (RSA)
+|_  256 2a:0d:4e:7c:f3:cb:2d:ba:10:e7:f8:56:b4:c3:4e:f5 (ECDSA)
+5432/tcp open  postgresql PostgreSQL DB 15.5
+| ssl-cert:
+|   Subject: commonName=db-pg01.corp.local
+|   Issuer: commonName=CORP-Internal-CA
+|   Not valid before: 2024-01-01T00:00:00
+|_  Not valid after:  2026-01-01T00:00:00
+| postgresql-info:
+|   Protocol: Database
+|   Version: 15.5
+|_  SSL: on
+MAC Address: 00:50:56:A1:10:05 (VMware)
+
+Nmap scan report for 10.40.0.21
+Host is up (0.00044s latency).
+Not shown: 65531 closed tcp ports (reset)
+PORT     STATE SERVICE       VERSION
+1433/tcp open  ms-sql-s      Microsoft SQL Server 2022 16.00.1000.06 RTM
+| ms-sql-info:
+|   10.40.0.21:1433:
+|     Version:
+|       name: Microsoft SQL Server 2022 RTM
+|       number: 16.00.1000.06
+|       Product: Microsoft SQL Server 2022
+|_    TCP port: 1433
+| ms-sql-config:
+|_  ERROR: No login credentials.
+1434/tcp open  ms-sql-m      Microsoft SQL Monitor
+3389/tcp open  ms-wbt-server Microsoft Terminal Services
+| rdp-enum-encryption:
+|   Security layer
+|_    CredSSP (NLA): SUCCESS
+MAC Address: 14:18:77:CC:33:21 (Dell Inc.)
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+# Nmap done at Tue May  6 09:24:45 2025 -- 6 IP addresses (6 hosts up) scanned in 285.43 seconds

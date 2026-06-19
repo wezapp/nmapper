@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -sV -sC --script s7-info,modbus-discover,enip-info -p 21,22,23,80,102,443,502,1911,2404,4840,44818,47808 192.168.20.0/24" start="1746476400" startstr="Tue May  6 08:20:00 2025" version="7.94" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="12" services="21,22,23,80,102,443,502,1911,2404,4840,44818,47808"/>
+<verbose level="0"/>
+<debugging level="0"/>
+
+<!-- Siemens S7-400 PLC -->
+<host starttime="1746476410" endtime="1746476450">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="192.168.20.10" addrtype="ipv4"/>
+<address addr="00:0E:8C:11:22:10" addrtype="mac" vendor="Siemens AG"/>
+<hostnames>
+<hostname name="plc-s7400-01" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Siemens S7 Web Server" method="probed" conf="10"/>
+<script id="http-title" output="SIMATIC S7 - Station - Overview"/>
+<script id="http-auth" output="No authentication required"/>
+</port>
+<port protocol="tcp" portid="102">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="iso-tsap" product="Siemens S7 TSAP" method="probed" conf="10"/>
+<script id="s7-info" output="&#xa;  Module: 6ES7 414-3XM07-0AB0&#xa;  Basic Hardware: 6ES7 414-3XM07-0AB0&#xa;  Version: 3.3.3&#xa;  System Name: SIMATIC 300(1)&#xa;  Module Type: CPU 414-3 PN/DP&#xa;  Serial Number: S C-X2V447282013&#xa;  Plant Identification: LIGNE_PROD_1&#xa;  Copyright: Original Siemens Equipment"/>
+</port>
+</ports>
+<os>
+<osmatch name="Siemens S7 PLC" accuracy="94">
+<osclass type="embedded" vendor="Siemens" osfamily="S7" accuracy="94"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Schneider Electric Modicon M340 -->
+<host starttime="1746476460" endtime="1746476500">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="192.168.20.11" addrtype="ipv4"/>
+<address addr="00:80:F4:08:22:11" addrtype="mac" vendor="Schneider Electric"/>
+<hostnames>
+<hostname name="plc-modicon-m340" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Schneider Electric Modicon Web Server" method="probed" conf="10"/>
+<script id="http-title" output="BMX P34 2020 - Modicon M340"/>
+<script id="http-auth" output="No authentication required (guest access enabled)"/>
+</port>
+<port protocol="tcp" portid="502">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="modbus" product="Modbus TCP" method="probed" conf="10"/>
+<script id="modbus-discover" output="&#xa;  Unit ID 1&#xa;    Slave ID Data: FF0302000012000006000003090000035455000000000000&#xa;    Device ID: Schneider Electric Modicon M340 BMX P34 2020&#xa;    Vendor Name: Schneider Electric&#xa;    Product Code: BMX P34 2020&#xa;    Revision: V2.40"/>
+</port>
+</ports>
+</host>
+
+<!-- Serveur OPC UA (Siemens WinCC) -->
+<host starttime="1746476510" endtime="1746476560">
+<status state="up" reason="echo-reply" reason_ttl="128"/>
+<address addr="192.168.20.12" addrtype="ipv4"/>
+<address addr="14:18:77:CC:DD:12" addrtype="mac" vendor="Dell Inc."/>
+<hostnames>
+<hostname name="srv-wincc-opcua" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="http" product="Microsoft IIS httpd" version="10.0" method="probed" conf="10"/>
+<script id="http-title" output="WinCC Web Navigator"/>
+<script id="http-server-header" output="Microsoft-IIS/10.0"/>
+</port>
+<port protocol="tcp" portid="4840">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="opcua" product="Siemens SINUMERIK OPC UA Server" version="14.0.0.1" method="probed" conf="10"/>
+<script id="opcua-info" output="&#xa;  ProductUri: urn:SiemensAG:SINUMERIK:OPC-UA-Server&#xa;  ApplicationName: SINUMERIK OPC UA Server&#xa;  ApplicationUri: urn:SiemensAG:SINUMERIK:OPC-UA-Server&#xa;  ProductVersion: 14.0.0.1&#xa;  ManufacturerName: Siemens AG&#xa;  SecurityPolicies: None, Basic128Rsa15, Basic256, Basic256Sha256"/>
+</port>
+<port protocol="tcp" portid="4843">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="opcua-sec" product="OPC UA (TLS)" method="probed" conf="10"/>
+</port>
+</ports>
+<os>
+<osmatch name="Microsoft Windows Server 2019" accuracy="94">
+<osclass type="general purpose" vendor="Microsoft" osfamily="Windows" osgen="2019" accuracy="94"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Rockwell Allen-Bradley ControlLogix -->
+<host starttime="1746476570" endtime="1746476600">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="192.168.20.13" addrtype="ipv4"/>
+<address addr="00:00:BC:05:66:13" addrtype="mac" vendor="Rockwell Automation"/>
+<hostnames>
+<hostname name="plc-ab-controllogix" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Allen-Bradley ControlLogix Web Server" method="probed" conf="10"/>
+<script id="http-title" output="RSLogix 5000 - ControlLogix 5575"/>
+</port>
+<port protocol="tcp" portid="44818">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="EtherNet/IP" product="Rockwell Automation Allen-Bradley ControlLogix" version="V30.014" method="probed" conf="10"/>
+<script id="enip-info" output="&#xa;  Vendor ID: Rockwell Automation (1)&#xa;  Device Type: Programmable Logic Controller (14)&#xa;  Product Code: 166&#xa;  Revision: 30.14&#xa;  Status: 12384&#xa;  Serial Number: 0x6BA7D29C&#xa;  Product Name: 1756-L75/B LOGIX5575"/>
+</port>
+</ports>
+</host>
+
+<!-- HMI Poste SCADA - multi-exposure -->
+<host starttime="1746476610" endtime="1746476670">
+<status state="up" reason="echo-reply" reason_ttl="128"/>
+<address addr="192.168.20.20" addrtype="ipv4"/>
+<address addr="00:01:05:AA:BB:20" addrtype="mac" vendor="Beckhoff Automation"/>
+<hostnames>
+<hostname name="hmi-scada-01" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="22">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ssh" product="OpenSSH" version="7.9p1" extrainfo="Debian 10+deb10u2, protocol 2.0" method="probed" conf="10"/>
+<script id="ssh-hostkey" output="&#xa;  2048 a3:b4:2d:fd:eb:5c:e2:d4:2c (RSA)&#xa;  256 9f:1c:4a:e4:da:ac:1f:07:d7 (ECDSA)&#xa;  256 c9:11:ac:10:2d:01:4b:c3:9f (ED25519)"/>
+</port>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="http" product="WinCC Web Navigator" method="probed" conf="10"/>
+<script id="http-title" output="WinCC Web Navigator - Login"/>
+</port>
+<port protocol="tcp" portid="445">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="microsoft-ds" product="Windows 10 Enterprise 2019 LTSC microsoft-ds" method="probed" conf="10"/>
+<script id="smb-security-mode" output="&#xa;  authentication_level: user&#xa;  challenge_response: supported&#xa;  message_signing: disabled (dangerous, but default)"/>
+</port>
+<port protocol="tcp" portid="3389">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="ms-wbt-server" product="Microsoft Terminal Services" method="probed" conf="10"/>
+</port>
+<port protocol="tcp" portid="5900">
+<state state="open" reason="syn-ack" reason_ttl="128"/>
+<service name="vnc" product="UltraVNC" version="1.2.4.0" method="probed" conf="10"/>
+<script id="realvnc-auth-bypass" output="No authentication required (security-type NONE)"/>
+</port>
+</ports>
+<os>
+<osmatch name="Microsoft Windows 10 Enterprise 2019 LTSC" accuracy="96">
+<osclass type="general purpose" vendor="Microsoft" osfamily="Windows" osgen="10" accuracy="96"/>
+</osmatch>
+</os>
+</host>
+
+<!-- Honeywell BACnet Gateway (Building Automation) -->
+<host starttime="1746476680" endtime="1746476710">
+<status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="192.168.20.30" addrtype="ipv4"/>
+<address addr="00:60:35:BB:CC:30" addrtype="mac" vendor="Honeywell"/>
+<hostnames>
+<hostname name="bacnet-gw-01" type="PTR"/>
+</hostnames>
+<ports>
+<port protocol="tcp" portid="80">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="http" product="Honeywell NMC Web Interface" method="probed" conf="10"/>
+<script id="http-title" output="Honeywell Enterprise Buildings Integrator"/>
+<script id="http-auth" output="No authentication required"/>
+</port>
+<port protocol="tcp" portid="47808">
+<state state="open" reason="syn-ack" reason_ttl="64"/>
+<service name="bacnet" product="Honeywell BACnet/IP Gateway" method="probed" conf="10"/>
+<script id="bacnet-info" output="&#xa;  Vendor ID: 19 (Honeywell, Inc.)&#xa;  Vendor Name: Honeywell, Inc.&#xa;  Model Name: WEBs-AX Enterprise Server&#xa;  Application Software Version: 3.8.1.9&#xa;  Object ID: 4194303&#xa;  Object Name: Honeywell-BACnet-GW&#xa;  Description: Honeywell EBI BACnet Gateway"/>
+</port>
+</ports>
+</host>
+
+<runstats>
+<finished time="1746476800" timestr="Tue May  6 08:26:40 2025" elapsed="400.00" summary="Nmap done at Tue May  6 08:26:40 2025; 254 IP addresses (6 hosts up) scanned in 400.00 seconds"/>
+<hosts up="6" down="248" total="254"/>
+</runstats>
+</nmaprun>
