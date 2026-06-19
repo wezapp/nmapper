@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSP gérée par le reverse proxy en production -->
+    <title>NMAPPER — Console</title>
+
+    <!-- Bibliothèques vendorisées -->
+    <script src="assets/js/vendor/d3.min.js"></script>
+    <script src="assets/js/vendor/jspdf.umd.min.js"></script>
+
+    <!-- Scripts de l'application (ordre important !) -->
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/security-analyzer.js"></script>
+    <script src="assets/js/file-processor.js"></script>
+    <script src="assets/js/encrypt-export.js"></script>
+    <script src="assets/js/pdf-reports.js"></script>
+    <script src="assets/js/network-visualization.js"></script>
+    <script src="assets/js/filters.js"></script>
+    <script src="assets/js/table.js"></script>
+    <script src="assets/js/csv-export.js"></script>
+    <script src="assets/js/nmap-builder.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/scanner-ui.js"></script>
+    <script src="assets/js/app-shell.js"></script>
+    <script src="assets/js/deployment.js"></script>
+    <script src="assets/js/activity-log.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/dashboard-live.js"></script>
+    <script src="assets/js/agent-map.js"></script>
+    <script src="assets/js/admin.js"></script>
+
+    <!-- Styles : base + table + override v2 (l'ordre compte) -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/table-styles.css">
+    <link rel="stylesheet" href="assets/css/style-v2.css">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <link rel="stylesheet" href="assets/css/monitoring.css">
+</head>
+<body>
+<div class="container">
+  <div class="app-shell">
+
+    <!-- ========================= SIDEBAR ========================= -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo"><span>N</span></div>
+        <div class="brand-name"><b>NM</b>APPER</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-label">🔬 Analyse</div>
+        <div class="nav-item" data-view="dashboard"><span class="ic">📊</span><span>Dashboard</span></div>
+        <div class="nav-item" data-view="map"><span class="ic">🗺️</span><span>Cartographie</span></div>
+        <div class="nav-item" data-view="scoring"><span class="ic">🧮</span><span>Scoring & risques</span></div>
+        <div class="nav-item" data-view="scanner">
+          <span class="ic">🎯</span><span>Scanner actif</span>
+          <span class="badge" id="scannerActiveBadge" style="display:none;">0</span>
+        </div>
+        <div class="nav-item" data-view="builder"><span class="ic">🛠️</span><span>Générateur Nmap</span></div>
+        <div class="nav-item" data-view="reports"><span class="ic">📄</span><span>Rapports</span>
+          <span class="badge" id="navVulnBadge" style="display:none;">0</span></div>
+
+        <div class="nav-group-label">🤖 Agent</div>
+        <div class="nav-item" data-view="agentdash"><span class="ic">📊</span><span>Dashboard agents</span></div>
+        <div class="nav-item" data-view="agentmap"><span class="ic">🗺️</span><span>Cartographie agents</span></div>
+        <div class="nav-item" data-view="deploy"><span class="ic">🚀</span><span>Déploiement</span></div>
+
+        <div class="nav-group-label">⚙️ Système</div>
+        <div class="nav-item" data-view="admin"><span class="ic">⚙️</span><span>Administration</span></div>
+        <div class="nav-item" data-view="activity"><span class="ic">📋</span><span>Journal</span></div>
+        <div class="nav-item" data-view="sources"><span class="ic">📂</span><span>Sources / Import</span></div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <span>v2.0 · offline</span>
+        <button class="theme-toggle" data-action="toggleTheme" title="Changer de thème">🌙</button>
+      </div>
+    </aside>
+
+    <!-- ========================= MAIN ========================= -->
+    <div class="main-area">
+
+      <!-- topbar -->
+      <header class="topbar">
+        <div class="page-title">
+          <span id="pageTitle">Cartographie réseau</span>
+          <small id="pageSub">Topologie interactive</small>
+        </div>
+      </header>
+
+      <div class="content">
+
+        <!-- ===================== VUE : SOURCES ===================== -->
+        <section class="view" id="view-sources">
+          <div class="setup-section">
+            <h3>📂 Configuration des sources de données</h3>
+
+            <div class="method-selector">
+              <button class="method-btn active" data-action="selectMethod" data-arg="files">📁 Sélection de fichiers</button>
+              <button class="method-btn" data-action="selectMethod" data-arg="server">🌐 Serveur local</button>
+            </div>
+
+            <div id="method-files" class="method-content active">
+              <div class="warning-box">⚠️ <strong>Méthode recommandée</strong> : sélectionnez tous vos fichiers .xml et .txt du répertoire nmap_result</div>
+              <input type="file" id="fileInput" multiple accept=".xml,.txt" style="width:100%; padding:10px;">
+              <div id="selectedFiles" class="file-list"></div>
+            </div>
+
+            <div id="method-server" class="method-content">
+              <div class="warning-box">⚠️ <strong>Nécessite un serveur HTTP local</strong> pour contourner les restrictions CORS</div>
+              <div style="margin-bottom:15px;">
+                <label>📁 Chemin vers le répertoire nmap_result :</label>
+                <input type="text" id="directoryPath" placeholder="./nmap_result/" value="/nmap_result/" style="width:100%; padding:10px;">
+              </div>
+              <button class="scan-btn" data-action="scanDirectory">🔍 Scanner le répertoire</button>
+              <div class="code-block">Instructions pour serveur local :
+1. Ouvrez un terminal dans le répertoire contenant ce fichier HTML
+2. Lancez un serveur HTTP :
+   Python 3: python -m http.server 8000
+   Node.js:  npx http-server -p 8000
+3. Accédez à http://localhost:8000
+4. Placez vos fichiers nmap dans le même répertoire</div>
+            </div>
+
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--stroke-soft); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <span style="color:var(--txt-3); font-size:13px;">💾 Session :</span>
+              <button class="method-btn" data-action="exportSession">⬇️ Exporter JSON</button>
+              <label class="method-btn" style="cursor:pointer; margin:0;">
+                ⬆️ Importer JSON
+                <input type="file" accept=".json" style="display:none;" id="importSessionInput">
+              </label>
+            </div>
+
+            <!-- ── Déchiffrer un rapport .nmr ─────────────────── -->
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--stroke-soft);">
+              <h4 style="color:var(--txt-2); font-size:13px; margin:0 0 12px; font-weight:600;">🔓 Déchiffrer un rapport exporté</h4>
+              <div style="margin-bottom:10px;">
+                <label style="display:block; font-size:12px; color:var(--txt-3); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;">Fichier .nmr chiffré</label>
+                <input type="file" id="dec-file-input" accept=".nmr" style="width:100%; padding:8px; box-sizing:border-box;">
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:12px; color:var(--txt-3); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;">Mot de passe</label>
+                <input type="text" id="dec-password" placeholder="32 caractères hex (généré à l'export)"
+                       style="width:100%; padding:10px 14px; box-sizing:border-box;
+                              background:var(--bg); border:1px solid var(--stroke-soft);
+                              border-radius:8px; color:var(--txt-1); font-size:13px;
+                              font-family:monospace; outline:none;">
+              </div>
+              <button id="dec-decrypt-btn" class="scan-btn" style="width:100%; padding:10px; font-size:13px;">🔓 Déchiffrer et télécharger</button>
+              <div id="dec-result" style="margin-top:8px; font-size:13px; min-height:20px;"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================== VUE : CARTOGRAPHIE ===================== -->
+        <section class="view" id="view-map">
+
+          <!-- ── PANEL CARTE ── -->
+          <div id="map-carte-panel">
+
+            <!-- Filtres avancés intégrés à la cartographie -->
+            <div class="filter-section" id="portFilters">
+              <div class="filter-header">
+                <h3>🔍 Filtres par Ports et Services</h3>
+                <button class="filter-toggle" data-action="toggleFilters">Afficher/Masquer</button>
+              </div>
+              <div class="filter-content" id="filterContent">
+                <div class="filter-grid">
+                  <div class="filter-group">
+                    <h4>🔌 Ports Spécifiques</h4>
+                    <input type="text" class="filter-input" id="portFilter" placeholder="Ex: 22,80,443 ou 8000-8080">
+                    <div class="quick-filters">
+                      <button class="quick-filter-btn" data-action="addPortFilter" data-arg="22,80,443">Web + SSH</button>
+                      <button class="quick-filter-btn" data-action="addPortFilter" data-arg="102,502,1911,2404,4840,44818,47808,20000">Industrial</button>
+                      <button class="quick-filter-btn" data-action="addPortFilter" data-arg="135,139,445">SMB/NetBIOS</button>
+                      <button class="quick-filter-btn" data-action="addPortFilter" data-arg="3389,5900">Remote Desktop</button>
+                    </div>
+                  </div>
+                  <div class="filter-group">
+                    <h4>⚙️ Services</h4>
+                    <input type="text" class="filter-input" id="serviceFilter" placeholder="Ex: http,ssh,ftp">
+                    <div class="quick-filters">
+                      <button class="quick-filter-btn" data-action="addServiceFilter" data-arg="http,https">Web</button>
+                      <button class="quick-filter-btn" data-action="addServiceFilter" data-arg="ssh,telnet">Terminal</button>
+                      <button class="quick-filter-btn" data-action="addServiceFilter" data-arg="ftp,smb">Partage fichiers</button>
+                      <button class="quick-filter-btn" data-action="addServiceFilter" data-arg="mysql,postgresql">Bases de données</button>
+                    </div>
+                  </div>
+                  <div class="filter-group">
+                    <h4>📊 État des Ports</h4>
+                    <div class="check-group">
+                      <label class="obj-check"><input type="checkbox" id="showOpen" checked><span>Ports ouverts</span></label>
+                      <label class="obj-check"><input type="checkbox" id="showClosed"><span>Ports fermés</span></label>
+                      <label class="obj-check"><input type="checkbox" id="showFiltered"><span>Ports filtrés</span></label>
+                    </div>
+                    <div class="fg-field">
+                      <label class="fg-label">Ports ouverts minimum</label>
+                      <input type="number" class="filter-input" id="minPorts" placeholder="0" min="0">
+                    </div>
+                  </div>
+                  <div class="filter-group">
+                    <h4>🎯 Critères Spéciaux</h4>
+                    <div class="check-group">
+                      <label class="obj-check"><input type="checkbox" id="onlyVulnerable"><span>Seulement les hôtes à risque</span></label>
+                      <label class="obj-check"><input type="checkbox" id="excludeVulnerable"><span>Exclure les hôtes à risque</span></label>
+                    </div>
+                    <input type="text" class="filter-input" id="ipFilter" placeholder="Filtrer par IP (ex: 192.168.1.*)">
+                  </div>
+                </div>
+                <div class="filter-actions">
+                  <button class="filter-btn apply-btn" data-action="applyFilters">✅ Appliquer les filtres</button>
+                  <button class="filter-btn clear-btn" data-action="clearFilters">🗑️ Effacer tout</button>
+                  <button class="filter-btn clear-btn" data-action="resetView">🔄 Vue normale</button>
+                </div>
+                <div id="filterResults" class="filter-results" style="display:none;"></div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="stats">
+                <div class="stat-box"><div class="stat-number" id="vlanCount">0</div><div>VLANs</div></div>
+                <div class="stat-box"><div class="stat-number" id="hostCount">0</div><div>Hôtes</div></div>
+                <div class="stat-box"><div class="stat-number" id="portCount">0</div><div>Ports ouverts</div></div>
+                <div class="stat-box"><div class="stat-number" id="vulnerableCount">0</div><div>Hôtes à risque</div></div>
+                <div class="stat-box"><div class="stat-number" id="fileCount">0</div><div>Fichiers</div></div>
+              </div>
+              <div class="breadcrumb" id="breadcrumb">
+                <a data-action="showVLANView">🏠 Vue d'ensemble</a>
+              </div>
+            </div>
+
+            <div id="filterChipsBar" class="filter-chips-bar" style="display:none;"></div>
+
+            <div id="network-viz">
+              <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background:#2dd4bf;"></div><span>VLAN</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div><span>Hôte normal</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#f43f5e;"></div><span>Hôte à risque</span></div>
+                <div class="legend-item"><div class="legend-color" style="background:#a78bfa;"></div><span>Hôte filtré</span></div>
+              </div>
+              <div id="loadingIndicator" class="loading" style="display:none;">
+                <div class="spinner"></div>
+                <p>Chargement et analyse des fichiers Nmap…</p>
+              </div>
+            </div>
+
+            <div id="hosts-table"></div>
+
+            <div class="empty-state" id="mapEmptyState">
+              <div class="es-ic">🛰️</div>
+              <h2>Aucune donnée chargée</h2>
+              <p>Importez vos fichiers Nmap pour générer la cartographie.</p>
+              <button class="scan-btn" data-view="sources" style="margin-top:14px;">📂 Aller aux sources</button>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================== VUE : DASHBOARD ===================== -->
+        <section class="view" id="view-dashboard">
+
+          <!-- État vide nmap -->
+          <div class="empty-state" id="dashEmptyState" style="padding:24px 0;">
+            <div class="es-ic" style="font-size:32px;">📊</div>
+            <h2>Aucune donnée Nmap chargée</h2>
+            <p>Importez vos fichiers Nmap pour le dashboard analytique.</p>
+            <button class="scan-btn" data-view="sources" style="margin-top:14px;">📂 Aller aux sources</button>
+          </div>
+
+          <!-- Contenu dashboard nmap (masqué tant qu'il n'y a pas de données) -->
+          <div id="dashContent" style="display:none;">
+
+            <!-- KPI : répartition par niveau de risque -->
+            <div class="dash-kpi-row" id="dashKpiRow"></div>
+
+            <!-- Ligne 1 : donut risque + types de dispositifs -->
+            <div class="dash-grid-2">
+              <div class="dash-card">
+                <div class="dash-card-title">📊 Répartition des risques</div>
+                <div id="dashRiskChart"></div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-card-title">🖥️ Types de dispositifs</div>
+                <div id="dashDeviceTypes"></div>
+              </div>
+            </div>
+
+            <!-- Ligne 2 : top ports + constructeurs -->
+            <div class="dash-grid-2">
+              <div class="dash-card">
+                <div class="dash-card-title">🔌 Top ports exposés</div>
+                <div id="dashTopPorts"></div>
+              </div>
+              <div class="dash-card">
+                <div class="dash-card-title">🏭 Constructeurs détectés</div>
+                <div id="dashVendorChart"></div>
+              </div>
+            </div>
+
+            <!-- Ligne 3 : NSE pleine largeur -->
+            <div class="dash-card" style="margin-bottom:16px;">
+              <div class="dash-card-title">📜 Scripts NSE déclenchés</div>
+              <div id="dashNSEChart"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ===================== VUE : DASHBOARD AGENTS ===================== -->
+        <section class="view" id="view-agentdash">
+
+          <!-- KPIs monitoring temps réel -->
+          <div class="dash-live-section">
+            <div class="dash-live-title">
+              <span>📡 Monitoring temps réel</span>
+              <button class="filter-btn" onclick="DashboardLive.refresh()" style="padding:3px 10px;font-size:11px;">🔄</button>
+            </div>
+            <div class="dash-live-kpis" id="dash-live-kpis">
+              <div class="dash-kpi-card dash-kpi-agents">
+                <div class="dash-kpi-val" id="kpi-agents-online">—</div>
+                <div class="dash-kpi-label">Agents actifs</div>
+                <div class="dash-kpi-sub" id="kpi-agents-total">/ — total</div>
+              </div>
+              <div class="dash-kpi-card dash-kpi-hosts">
+                <div class="dash-kpi-val" id="kpi-hosts-total">—</div>
+                <div class="dash-kpi-label">Hôtes surveillés</div>
+                <div class="dash-kpi-sub">par les agents</div>
+              </div>
+              <div class="dash-kpi-card dash-kpi-vuln">
+                <div class="dash-kpi-val" id="kpi-hosts-vuln">—</div>
+                <div class="dash-kpi-label">Hôtes vulnérables</div>
+                <div class="dash-kpi-sub" id="kpi-vuln-pct">—% du parc</div>
+              </div>
+              <div class="dash-kpi-card dash-kpi-events">
+                <div class="dash-kpi-val" id="kpi-events">—</div>
+                <div class="dash-kpi-label">Événements</div>
+                <div class="dash-kpi-sub">dans le journal</div>
+              </div>
+            </div>
+            <!-- Hôtes vulnérables + événements récents -->
+            <div class="dash-live-panels">
+              <div class="dash-live-panel">
+                <div class="dash-live-panel-title">⚠️ Hôtes à risque</div>
+                <div id="dash-live-vuln-list"><p style="color:var(--txt-3);font-size:12px;padding:8px 0;">Aucun hôte vulnérable</p></div>
+              </div>
+              <div class="dash-live-panel">
+                <div class="dash-live-panel-title">📋 Événements récents</div>
+                <div id="dash-live-events-list"><p style="color:var(--txt-3);font-size:12px;padding:8px 0;">Aucun événement</p></div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ===================== VUE : CARTOGRAPHIE AGENTS ===================== -->
+        <section class="view" id="view-agentmap">
+
+          <!-- Toolbar filtres -->
+          <div class="inv-toolbar">
+            <input type="text" id="am-search" class="filter-input"
+              placeholder="🔎 IP, hostname, OS, service…" style="flex:1;min-width:140px;">
+            <select id="am-filter-vlan" class="filter-input inv-select">
+              <option value="">Tous les VLANs</option>
+            </select>
+            <select id="am-filter-risk" class="filter-input inv-select">
+              <option value="">Tous les risques</option>
+              <option value="critical">Critique</option>
+              <option value="high">Élevé</option>
+              <option value="medium">Moyen</option>
+              <option value="low">Faible</option>
+            </select>
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#00e5a0;font-weight:600;letter-spacing:.5px;">
+                <span style="width:7px;height:7px;border-radius:50%;background:#00e5a0;display:inline-block;animation:am-pulse 2s ease-in-out infinite;"></span>
+                LIVE
+              </span>
+              <button class="filter-btn" onclick="AgentMap.refresh()" style="padding:6px 14px;">🔄 Rafraîchir</button>
+            </div>
+          </div>
+
+          <!-- KPIs -->
+          <div class="stats" style="margin-bottom:14px;">
+            <div class="stat-box">
+              <div class="stat-number" id="am-kpi-agents">0</div>
+              <div>Agents</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="am-kpi-hosts">0</div>
+              <div>Hôtes</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="am-kpi-vlans">0</div>
+              <div>VLANs</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="am-kpi-risk" style="color:#ef4444;">0</div>
+              <div>Critiques / Élevés</div>
+            </div>
+            <div class="stat-box" style="flex:2;">
+              <div class="stat-number" id="am-kpi-time" style="font-size:14px;color:var(--txt-2);">—</div>
+              <div>Dernière mise à jour</div>
+            </div>
+          </div>
+
+          <!-- Graphe neural + état vide centré -->
+          <div id="am-graph" style="position:relative;width:100%;height:560px;margin-bottom:14px;border-radius:10px;overflow:hidden;background:#07090f;border:1px solid var(--stroke-soft);">
+            <div id="am-empty" style="display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;z-index:2;">
+              <div style="font-size:48px;margin-bottom:12px;">🤖</div>
+              <h2 style="color:var(--txt-2);margin:0 0 8px;">Aucun agent connecté</h2>
+              <p style="color:var(--txt-3);font-size:13px;margin:0 0 18px;">Déployez un agent depuis la section Déploiement<br>pour alimenter cette carte en temps réel.</p>
+              <button class="scan-btn" data-view="deploy" style="padding:8px 20px;">🚀 Déploiement</button>
+            </div>
+          </div>
+
+          <!-- Agents connectés + Événements côte à côte -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+
+            <!-- Agents -->
+            <div class="filter-section" style="margin:0;">
+              <div class="filter-header">
+                <h3>🤖 Agents connectés</h3>
+              </div>
+              <div class="filter-content active" id="am-agents-list" style="max-height:220px;overflow-y:auto;">
+                <p style="color:var(--txt-3);padding:12px 0;font-size:13px;">Aucun agent connecté.</p>
+              </div>
+            </div>
+
+            <!-- Événements -->
+            <div class="filter-section" style="margin:0;">
+              <div class="filter-header" style="display:flex;align-items:center;gap:8px;">
+                <h3 style="flex:1;">⚠️ Alertes & événements</h3>
+                <button id="am-clear-events" class="filter-btn"
+                  style="padding:3px 10px;font-size:11px;color:var(--warn,#f59e0b);">Vider</button>
+              </div>
+              <div class="filter-content active" id="am-events-list" style="max-height:220px;overflow-y:auto;">
+                <p style="color:var(--txt-3);font-size:13px;padding:12px 0;text-align:center;">Aucun événement — les changements détectés entre scans apparaîtront ici.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Inventaire nœuds -->
+          <div id="am-legend"></div>
+
+        </section>
+
+        <!-- ===================== VUE : RAPPORTS ===================== -->
+        <section class="view" id="view-reports">
+          <div class="filter-section" id="pdfReports">
+            <div class="filter-header">
+              <h3>📄 Génération de rapports PDF</h3>
+              <button class="filter-toggle" data-action="togglePDFSection">Afficher/Masquer</button>
+            </div>
+            <div class="filter-content" id="pdfContent">
+              <div class="filter-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+                <div class="filter-group">
+                  <h4>📊 Rapport Global</h4>
+                  <p>Génère un rapport complet de tous les hôtes et VLANs</p>
+                  <button class="filter-btn apply-btn" data-action="generateGlobalReport" style="width:100%;">📊 Rapport Global</button>
+                </div>
+                <div class="filter-group">
+                  <h4>🖥️ Rapport par Hôte</h4>
+                  <p>Rapport détaillé pour un hôte spécifique</p>
+                  <select id="hostSelect" class="filter-input">
+                    <option value="">-- Choisir un hôte --</option>
+                  </select>
+                  <button class="filter-btn apply-btn" data-action="generateSelectedHostReport" style="width:100%; margin-top:10px;">📋 Générer Rapport</button>
+                </div>
+                <div class="filter-group" id="filteredReportGroup" style="display:none;">
+                  <h4>🔍 Rapport Filtré</h4>
+                  <p>Rapport des résultats filtrés actuels</p>
+                  <button class="filter-btn apply-btn" data-action="generateFilteredReport" style="width:100%;">🔍 Rapport Filtré</button>
+                </div>
+                <div class="filter-group">
+                  <h4>📋 Export CSV</h4>
+                  <p>Tableau exploitable sous Excel / LibreOffice (UTF-8, séparateur&nbsp;;)</p>
+                  <button class="filter-btn apply-btn" data-action="exportCSVAll" style="width:100%; margin-bottom:8px;">📋 Tous les hôtes</button>
+                  <div id="csvFilteredGroup" style="display:none;">
+                    <button class="filter-btn apply-btn" data-action="exportCSVFiltered" style="width:100%;">🔍 Hôtes filtrés seulement</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== VUE : BUILDER ===================== -->
+        <section class="view" id="view-builder">
+          <div class="filter-section" id="nmapBuilder">
+            <div class="filter-header">
+              <h3>🛠️ Générateur de Commandes Nmap</h3>
+              <button class="filter-toggle" data-action="toggleNmapBuilder">Afficher/Masquer</button>
+            </div>
+            <div class="filter-content" id="nmapBuilderContent">
+              <div class="builder-presets">
+                <button class="preset-btn" data-action="nmapPreset" data-arg="stealth">🥷 Furtif</button>
+                <button class="preset-btn" data-action="nmapPreset" data-arg="discovery">🔍 Découverte rapide</button>
+                <button class="preset-btn" data-action="nmapPreset" data-arg="full">🔬 Audit complet</button>
+                <button class="preset-btn" data-action="nmapPreset" data-arg="ot">🏭 OT/SCADA</button>
+                <button class="preset-btn" data-action="nmapPreset" data-arg="multistep">📋 Multi-étapes</button>
+              </div>
+
+              <div class="builder-grid">
+                <div class="builder-params">
+                  <div class="builder-group">
+                    <h4>🔇 Discrétion</h4>
+                    <input type="range" id="nmapTiming" min="0" max="5" value="3" class="stealth-slider">
+                    <div class="stealth-labels"><span>Paranoïaque</span><span>Normal</span><span>Agressif</span></div>
+                    <div class="stealth-indicators" id="stealthIndicators">
+                      <div class="indicator"><span>⏱️ Temps</span><span id="indTime">~5 min</span></div>
+                      <div class="indicator"><span>🎯 Cibles</span><span id="indHostCount">1 cible</span></div>
+                      <div class="indicator"><span>📡 Bruit</span><div class="noise-bar"><div id="indNoise" class="noise-fill" style="width:50%"></div></div></div>
+                      <div class="indicator"><span>🛡️ Détection IDS</span><span id="indIDS" class="ids-tag medium">Moyen</span></div>
+                    </div>
+                  </div>
+
+                  <div class="builder-group">
+                    <h4>🎯 Informations souhaitées</h4>
+                    <div class="objective-grid">
+                      <label class="obj-check"><input type="checkbox" id="nmapPorts" checked><span>Ports ouverts</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapServices" checked><span>Services/Versions (-sV)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapOS"><span>Détection OS (-O)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapScripts"><span>Scripts NSE vulns</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapTraceroute"><span>Traceroute</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapDNS" checked><span>Résolution DNS (-n/-R)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapUDP"><span>Scan UDP (-sU)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapPingSweep"><span>Ping sweep seul (-sn)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapPn"><span>Pas de ping (-Pn)</span></label>
+                    </div>
+                  </div>
+
+                  <div class="builder-group" id="nseScriptsGroup" style="display:none;">
+                    <h4>📜 Scripts NSE</h4>
+                    <div class="objective-grid">
+                      <label class="obj-check"><input type="checkbox" id="nseDefault" checked><span>default</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nseVuln"><span>vuln</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nseSmb"><span>smb-vuln-*</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nseFtp"><span>ftp-anon</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nseSslEnum"><span>ssl-enum-ciphers</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nseHttpEnum"><span>http-enum</span></label>
+                    </div>
+                  </div>
+
+                  <div class="builder-group">
+                    <h4>📋 Cible</h4>
+                    <div class="target-row">
+                      <input type="text" id="nmapTarget" class="filter-input" placeholder="192.168.1.0/24 ou 10.0.0.1-50">
+                      <input type="text" id="nmapPorts2" class="filter-input" placeholder="Ports: 1-1024, 80,443 ou top1000">
+                    </div>
+                    <div class="target-row">
+                      <input type="text" id="nmapExclude" class="filter-input" placeholder="Exclure: 192.168.1.1,192.168.1.254">
+                      <input type="text" id="nmapOutputName" class="filter-input" placeholder="Nom fichier output (sans ext.)">
+                    </div>
+                  </div>
+
+                  <div class="builder-group">
+                    <h4>🕶️ Options furtives avancées</h4>
+                    <div class="objective-grid">
+                      <label class="obj-check"><input type="checkbox" id="nmapFragment"><span>Fragmentation (-f)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapDecoy"><span>Decoys (-D RND:5)</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapRandomize"><span>Ordre aléatoire</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapSpoofMAC"><span>Spoof MAC</span></label>
+                      <label class="obj-check"><input type="checkbox" id="nmapSourcePort"><span>Port source 53 (-g 53)</span></label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="builder-result">
+                  <div class="builder-group">
+                    <h4>⚡ Commande générée</h4>
+                    <div class="command-output" id="nmapCommandOutput">
+                      <pre id="nmapCommand">nmap -sS -sV -T3 --top-ports 1000 -oX results.xml 192.168.1.0/24</pre>
+                    </div>
+                    <div id="nmapWarnings"></div>
+                    <div class="command-actions">
+                      <button class="cmd-btn" data-action="copyNmapCmd">📋 Copier</button>
+                      <button class="cmd-btn" data-action="exportNmapSh">💾 Export .sh</button>
+                      <button class="cmd-btn" data-action="useLoadedHosts" title="Pré-remplir avec les hôtes chargés">📥 Utiliser hôtes chargés</button>
+                      <button class="cmd-btn cmd-btn-danger" data-action="resetNmapBuilder">🔄 Reset</button>
+                    </div>
+                  </div>
+
+                  <div class="builder-group">
+                    <h4>💡 Explications</h4>
+                    <div class="explanations-list" id="nmapExplanations"></div>
+                  </div>
+
+                  <div class="builder-group" id="multiStepSection" style="display:none;">
+                    <h4>📋 Plan Multi-Étapes</h4>
+                    <div class="multistep-list" id="multiStepList"></div>
+                    <div class="command-actions">
+                      <button class="cmd-btn" data-action="copyMultiStep">📋 Copier tout</button>
+                      <button class="cmd-btn" data-action="exportMultiSh">💾 Export script.sh</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== VUE : SCORING ===================== -->
+        <section class="view" id="view-scoring">
+          <div class="setup-section scoring-doc">
+            <h3>🧮 Méthodologie de scoring du risque</h3>
+            <p class="scoring-intro">
+              Chaque hôte reçoit un <strong>score de risque pondéré de 0 à 100</strong>, calculé de façon
+              <strong>entièrement déterministe et traçable</strong> — aucune IA, aucune estimation aléatoire.
+              Le score additionne des points selon des facteurs observés directement dans les résultats Nmap
+              (ports ouverts, scripts NSE, versions de services, système d'exploitation), puis il est plafonné à 100.
+              Le détail exact des points attribués à un hôte est visible dans son popup de détails, section
+              « 🧮 Détail du calcul ».
+            </p>
+
+            <h4 class="scoring-h">Niveaux de risque</h4>
+            <div class="scoring-levels">
+              <div class="scoring-level-card" style="--lvl-color:#f43f5e">
+                <div class="lvl-range">≥ 70</div><div class="lvl-name">Critique</div>
+                <div class="lvl-desc">Compromission probable ou exposition de services industriels/non chiffrés. À traiter en priorité.</div>
+              </div>
+              <div class="scoring-level-card" style="--lvl-color:#f59e0b">
+                <div class="lvl-range">45–69</div><div class="lvl-name">Élevé</div>
+                <div class="lvl-desc">Vulnérabilités confirmées ou plusieurs services sensibles exposés.</div>
+              </div>
+              <div class="scoring-level-card" style="--lvl-color:#eab308">
+                <div class="lvl-range">20–44</div><div class="lvl-name">Moyen</div>
+                <div class="lvl-desc">Surface d'attaque notable ou versions à mettre à jour.</div>
+              </div>
+              <div class="scoring-level-card" style="--lvl-color:#22c55e">
+                <div class="lvl-range">1–19</div><div class="lvl-name">Faible</div>
+                <div class="lvl-desc">Exposition limitée, durcissement recommandé mais non urgent.</div>
+              </div>
+              <div class="scoring-level-card" style="--lvl-color:#5f6b85">
+                <div class="lvl-range">0</div><div class="lvl-name">OK</div>
+                <div class="lvl-desc">Aucun facteur de risque détecté sur cet hôte.</div>
+              </div>
+            </div>
+
+            <h4 class="scoring-h">Facteurs et pondérations</h4>
+            <table class="scoring-table">
+              <thead>
+                <tr><th>Facteur</th><th>Points</th><th>Détail</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Ports critiques (OT/ICS, non chiffré)</td>
+                  <td class="pts">jusqu'à +40</td>
+                  <td>Modbus 502, S7 102, OPC-UA 4840, BACnet 47808, DNP3 20000, EtherNet/IP 44818, Telnet 23… (+22 chacun, plafonné)</td>
+                </tr>
+                <tr>
+                  <td>Ports à risque élevé</td>
+                  <td class="pts">jusqu'à +20</td>
+                  <td>SNMP 161/162, Elasticsearch 9200, VNC 5800… (+10 chacun)</td>
+                </tr>
+                <tr>
+                  <td>Ports à risque moyen</td>
+                  <td class="pts">jusqu'à +15</td>
+                  <td>SSH 22, SMB 445, RDP 3389, HTTP 80/8080, FTP 21… (+4 chacun)</td>
+                </tr>
+                <tr>
+                  <td>Services non chiffrés</td>
+                  <td class="pts">jusqu'à +15</td>
+                  <td>FTP, Telnet, HTTP, SNMP (21/23/80/8000/8080/161) — +5 chacun</td>
+                </tr>
+                <tr>
+                  <td>Findings NSE (scripts Nmap)</td>
+                  <td class="pts">+10 à +40</td>
+                  <td>Critique +40 (ex. <code>smb-vuln-ms17-010</code> VULNERABLE + CVE), élevé +25 (ftp-anon, heartbleed…), moyen +10 (TLS faible, RC4/MD5…)</td>
+                </tr>
+                <tr>
+                  <td>Versions de service obsolètes</td>
+                  <td class="pts">+8 à +30</td>
+                  <td>Critique +30 (vsftpd 2.3.4 backdoor), élevé +18 (Exim &lt; 4.92 RCE, OpenSSL 1.0.x…), moyen +8 (OpenSSH &lt; 7.0, Apache &lt; 2.4…)</td>
+                </tr>
+                <tr>
+                  <td>OS en fin de vie (EOL)</td>
+                  <td class="pts">+10 à +30</td>
+                  <td>Critique +30 (Windows XP/2000/Vista), élevé +20 (Windows 7, Server 2003/2008, noyau Linux 2.x), moyen +10 (Windows 8, Server 2012…)</td>
+                </tr>
+                <tr>
+                  <td>Surface d'exposition</td>
+                  <td class="pts">+5 à +10</td>
+                  <td>≥ 6 ports ouverts : +5 · ≥ 10 ports ouverts : +10</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="scoring-note">
+              <strong>Escalade sémantique :</strong> un <em>finding confirmé</em> impose un plancher de gravité,
+              quel que soit le total arithmétique. Exemple : un script NSE renvoyant <code>VULNERABLE</code> avec
+              une CVE (type EternalBlue) classe l'hôte en <strong>Critique</strong> même si la somme des points
+              resterait sous 70. À l'inverse, le score reste plafonné à 100. Tous les facteurs proviennent de faits
+              Nmap vérifiables — le scoring est reproductible et auditable.
+            </div>
+          </div>
+        </section>
+
+        <!-- ===================== VUE : SCANNER ===================== -->
+        <section class="view" id="view-scanner">
+
+          <!-- Configuration de la clé API -->
+          <div class="filter-section">
+            <div class="filter-header">
+              <h3>🔑 Configuration API</h3>
+            </div>
+            <div class="filter-content active">
+              <p style="color:var(--txt-2);font-size:13px;margin-bottom:12px;">
+                Entrez la clé API du backend NMAPPER pour autoriser les scans.<br>
+                Récupérez-la avec : <code style="background:var(--stroke-soft);padding:1px 5px;border-radius:4px;">grep API_KEY .env</code>
+                ou <code style="background:var(--stroke-soft);padding:1px 5px;border-radius:4px;">docker exec nmapper-api cat /scans/.apikey</code>
+              </p>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="password" id="sc-api-key-input" class="filter-input"
+                       placeholder="Collez votre clé API ici"
+                       style="flex:1;font-family:monospace;letter-spacing:1px;">
+                <button class="filter-btn apply-btn" data-action="saveApiKey"
+                        style="white-space:nowrap;">💾 Valider</button>
+              </div>
+              <div style="margin-top:6px;font-size:11px;" id="sc-session-status">🔴 Non connecté</div>
+            </div>
+          </div>
+
+          <!-- Nouveau scan -->
+          <div class="filter-section">
+            <div class="filter-header">
+              <h3>🎯 Nouveau scan</h3>
+            </div>
+            <div class="filter-content active">
+
+              <!-- Sélecteur de mode + cibles -->
+              <div class="filter-group">
+                <h4>Cibles</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                  <button class="sc-mode-btn filter-btn active" data-mode="cidr"
+                          data-action="setScanTargetMode" data-arg="cidr">CIDR</button>
+                  <button class="sc-mode-btn filter-btn" data-mode="list"
+                          data-action="setScanTargetMode" data-arg="list">Liste</button>
+                  <button class="sc-mode-btn filter-btn" data-mode="file"
+                          data-action="setScanTargetMode" data-arg="file">Fichier .txt</button>
+                  <button class="filter-btn" data-action="fillFromCurrentVlan"
+                          title="Pré-remplit avec le VLAN actuellement sélectionné dans la cartographie"
+                          style="margin-left:auto;">📍 VLAN actuel</button>
+                </div>
+                <textarea id="sc-target-input" class="filter-input" rows="2"
+                          placeholder="Ex: 192.168.1.0/24"
+                          style="width:100%;resize:vertical;font-family:monospace;font-size:12px;"></textarea>
+                <div id="sc-file-row" style="display:none;margin-top:6px;align-items:center;gap:8px;">
+                  <label class="method-btn" style="cursor:pointer;">
+                    📂 Importer un fichier .txt (une IP/CIDR par ligne)
+                    <input type="file" accept=".txt" style="display:none;" id="sc-target-file-input">
+                  </label>
+                </div>
+                <small style="color:var(--txt-3);font-size:11px;margin-top:4px;display:block;">
+                  Formats acceptés : IP · CIDR (192.168.1.0/24) · Plage nmap (192.168.1.1-50) · Plusieurs cibles séparées par virgule ou saut de ligne
+                </small>
+              </div>
+
+              <!-- Presets de ports -->
+              <div class="filter-group">
+                <h4>Ports</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                  <button class="sc-preset-chip filter-btn active" data-preset="top100"
+                          data-action="setScanPortPreset" data-arg="top100">Top 100</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="top1000"
+                          data-action="setScanPortPreset" data-arg="top1000">Top 1000</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="web"
+                          data-action="setScanPortPreset" data-arg="web">🌐 Web</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="ssh_rdp"
+                          data-action="setScanPortPreset" data-arg="ssh_rdp">🔑 SSH/RDP</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="database"
+                          data-action="setScanPortPreset" data-arg="database">🗄️ Bases</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="industrial"
+                          data-action="setScanPortPreset" data-arg="industrial">⚙️ OT/SCADA</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="full"
+                          data-action="setScanPortPreset" data-arg="full">🔓 1-65535</button>
+                  <button class="sc-preset-chip filter-btn" data-preset="custom"
+                          data-action="setScanPortPreset" data-arg="custom">✏️ Custom</button>
+                </div>
+                <div id="sc-custom-ports-row" style="display:none;">
+                  <input type="text" id="sc-custom-ports" class="filter-input"
+                         placeholder="Ex: 22,80,443,8080,1-1024"
+                         style="font-family:monospace;">
+                </div>
+              </div>
+
+              <!-- Profil + nom VLAN -->
+              <div class="filter-grid">
+                <div class="filter-group">
+                  <h4>Profil nmap</h4>
+                  <select id="sc-profile-select" class="filter-input">
+                    <option value="discovery">🔍 Discovery (ping seul, rapide)</option>
+                    <option value="quick" selected>⚡ Quick (versions, top 100)</option>
+                    <option value="standard">📋 Standard (scripts + top 1000)</option>
+                    <option value="stealth">🥷 Stealth (SYN discret, T2)</option>
+                    <option value="full">🔓 Full (tous les ports)</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <h4>Nom VLAN / Label</h4>
+                  <input type="text" id="sc-vlan-name" class="filter-input"
+                         placeholder="Ex: VLAN10-Corporate"
+                         style="font-family:monospace;">
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button class="filter-btn apply-btn" data-action="startScan"
+                        style="font-size:14px;padding:10px 28px;">
+                  🚀 Lancer le scan
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Scans en cours + historique -->
+          <div class="filter-section">
+            <div class="filter-header" style="display:flex;align-items:center;gap:8px;">
+              <h3 style="flex:1;">
+                📡 Scans
+                <span id="sc-active-badge"
+                      style="display:none;background:var(--warn);color:#fff;border-radius:10px;
+                             padding:1px 7px;font-size:11px;margin-left:6px;font-weight:700;">0</span>
+              </h3>
+              <button class="filter-btn" data-action="loadScanHistory"
+                      style="padding:4px 12px;font-size:11px;">🔄 Rafraîchir</button>
+            </div>
+            <div class="filter-content active">
+              <div id="sc-scans-list">
+                <p style="color:var(--txt-3);text-align:center;padding:20px 0;">
+                  Configurez votre clé API et lancez votre premier scan.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </section>
+        <!-- /scanner -->
+
+        <!-- ═══════════════════════════════════════
+             DÉPLOIEMENT SSH
+        ════════════════════════════════════════ -->
+        <section class="view" id="view-deploy">
+          <div class="deploy-layout">
+
+            <!-- ── COLONNE GAUCHE : formulaire SSH + rôle ── -->
+            <div class="deploy-form-col">
+
+              <!-- Cible SSH -->
+              <div class="setup-section">
+                <h3>🖥️ Cible SSH</h3>
+                <div class="deploy-field-row">
+                  <div class="fg-field" style="flex:3;">
+                    <label class="fg-label">Adresse IP / Hostname</label>
+                    <input type="text" class="filter-input" id="dep-host" placeholder="10.1.0.10">
+                  </div>
+                  <div class="fg-field" style="flex:1;">
+                    <label class="fg-label">Port SSH</label>
+                    <input type="number" class="filter-input" id="dep-ssh-port" value="22">
+                  </div>
+                </div>
+                <!-- Probe TCP -->
+                <div class="dep-probe-row">
+                  <button class="dep-probe-btn" id="dep-probe-btn" type="button">📡 Tester la connexion</button>
+                  <span class="dep-probe-result" id="dep-probe-result"></span>
+                </div>
+
+                <div class="fg-field">
+                  <label class="fg-label">Utilisateur SSH</label>
+                  <input type="text" class="filter-input" id="dep-user" placeholder="root">
+                </div>
+
+                <!-- Auth -->
+                <div class="fg-field">
+                  <label class="fg-label">Authentification</label>
+                  <div class="deploy-auth-tabs">
+                    <button class="deploy-tab active" data-auth="password">🔑 Mot de passe</button>
+                    <button class="deploy-tab" data-auth="key">📄 Clé SSH</button>
+                  </div>
+                </div>
+                <div id="dep-auth-password" class="fg-field">
+                  <label class="fg-label">Mot de passe</label>
+                  <input type="password" class="filter-input" id="dep-password" placeholder="••••••••" autocomplete="off">
+                </div>
+                <div id="dep-auth-key" class="fg-field" style="display:none;">
+                  <label class="fg-label">Clé privée SSH (contenu complet)</label>
+                  <textarea class="filter-input deploy-key-textarea" id="dep-ssh-key"
+                    placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----"></textarea>
+                </div>
+              </div>
+
+              <!-- Rôle & configuration -->
+              <div class="setup-section">
+                <h3>⚙️ Rôle &amp; Configuration</h3>
+                <div class="fg-field">
+                  <label class="fg-label">Déployer en tant que</label>
+                  <div class="deploy-role-tabs">
+                    <button class="deploy-role-btn active" data-role="agent">🤖 Agent de collecte</button>
+                    <button class="deploy-role-btn" data-role="server">🖧 Serveur NMAPPER</button>
+                  </div>
+                </div>
+
+                <!-- Config agent -->
+                <div id="dep-config-agent">
+                  <div class="deploy-field-row">
+                    <div class="fg-field" style="flex:2;">
+                      <label class="fg-label">IP du serveur NMAPPER</label>
+                      <input type="text" class="filter-input" id="dep-server-ip" placeholder="10.1.0.10">
+                    </div>
+                    <div class="fg-field" style="flex:1;">
+                      <label class="fg-label">Port API</label>
+                      <input type="number" class="filter-input" id="dep-server-port" value="25774">
+                    </div>
+                  </div>
+                  <div class="fg-field">
+                    <label class="fg-label">Clé API NMAPPER</label>
+                    <input type="text" class="filter-input" id="dep-api-key" placeholder="Visible dans python-api/scans/.apikey">
+                  </div>
+                  <div class="fg-field">
+                    <label class="fg-label">Intervalle de collecte (secondes)</label>
+                    <input type="number" class="filter-input" id="dep-interval" value="30" min="10" max="3600">
+                  </div>
+                </div>
+
+                <!-- Config serveur -->
+                <div id="dep-config-server" style="display:none;">
+                  <div class="fg-field">
+                    <label class="fg-label">Port du backend NMAPPER</label>
+                    <input type="number" class="filter-input" id="dep-nmapper-port" value="25774">
+                  </div>
+                  <p class="dep-hint">
+                    Copie python-api/ sur la cible, installe les dépendances et génère une clé API.
+                    La clé complète apparaîtra dans les logs une fois le déploiement terminé.
+                  </p>
+                </div>
+
+                <!-- Systemd -->
+                <div class="check-group" style="margin-top:12px;">
+                  <label class="obj-check">
+                    <input type="checkbox" id="dep-systemd" checked>
+                    <span>Créer un service systemd (démarrage automatique)</span>
+                  </label>
+                </div>
+              </div>
+
+              <button class="scan-btn" id="dep-deploy-btn"
+                style="width:100%;padding:13px;font-size:14px;margin-top:4px;letter-spacing:.3px;">
+                🚀 Déployer
+              </button>
+            </div>
+
+            <!-- ── COLONNE DROITE : logs + historique ── -->
+            <div class="deploy-log-col">
+
+              <!-- Log live -->
+              <div class="setup-section" style="flex:1;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                  <h3 style="margin:0;flex:1;">📋 Log de déploiement</h3>
+                  <span id="dep-status-badge" class="dep-badge dep-idle">En attente</span>
+                </div>
+                <div class="deploy-log-box" id="dep-log-output">
+                  <p class="dep-log-placeholder">Aucun déploiement en cours — remplissez le formulaire et cliquez sur Déployer.</p>
+                </div>
+              </div>
+
+              <!-- Historique jobs -->
+              <div class="setup-section">
+                <h3>🕐 Déploiements récents</h3>
+                <div id="dep-jobs-list">
+                  <p style="color:var(--txt-3);font-size:13px;">Aucun déploiement dans cette session.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── INSTRUCTIONS MANUELLES ── -->
+          <div class="setup-section dep-manual-section">
+            <div class="dep-manual-header">
+              <div>
+                <h3 style="margin:0;">📋 Installation manuelle</h3>
+                <p class="dep-hint" style="margin:4px 0 0;">Commandes à copier-coller directement sur la machine cible.</p>
+              </div>
+              <div class="deploy-role-tabs" style="margin:0;">
+                <button class="dep-manual-tab active" data-manual="agent">🤖 Agent</button>
+                <button class="dep-manual-tab" data-manual="server">🖧 Serveur</button>
+              </div>
+            </div>
+
+            <!-- Clé API courante -->
+            <div class="dep-apikey-row">
+              <span class="fg-label" style="flex-shrink:0;margin:0;">🔑 Clé API :</span>
+              <code class="dep-apikey-val" id="dep-apikey-display">chargement…</code>
+              <button class="dep-copy-btn" id="dep-copy-key" title="Copier la clé API">📋 Copier</button>
+            </div>
+
+            <!-- AGENT -->
+            <div id="dep-manual-agent">
+              <div class="dep-prereq-badge">🟢 Prérequis : <strong>Python 3</strong> uniquement — <strong>aucun pip install</strong> nécessaire.</div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">① Copiez <code>agent.py</code> sur la machine cible</div>
+                <div class="code-block" id="dep-cmd-scp">scp installation/agent.py root@TARGET_IP:/opt/nmapper-agent/agent.py</div>
+                <button class="dep-copy-btn" data-copy="dep-cmd-scp">📋 Copier</button>
+              </div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">② Lancez l'agent (test immédiat)</div>
+                <div class="code-block" id="dep-cmd-run">python3 /opt/nmapper-agent/agent.py \
+  --server-ip NMAPPER_IP \
+  --port 25774 \
+  --key API_KEY_PLACEHOLDER \
+  --interval 30</div>
+                <button class="dep-copy-btn" data-copy="dep-cmd-run">📋 Copier</button>
+              </div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">③ (Optionnel) Service systemd — démarrage automatique</div>
+                <div class="code-block" id="dep-cmd-systemd">cat > /etc/systemd/system/nmapper-agent.service &lt;&lt; 'EOF'
+[Unit]
+Description=NMAPPER Agent de collecte
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=python3 /opt/nmapper-agent/agent.py --server-ip NMAPPER_IP --port 25774 --key API_KEY_PLACEHOLDER --interval 30
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable --now nmapper-agent</div>
+                <button class="dep-copy-btn" data-copy="dep-cmd-systemd">📋 Copier</button>
+              </div>
+            </div>
+
+            <!-- SERVEUR -->
+            <div id="dep-manual-server" style="display:none;">
+              <div class="dep-prereq-badge">🔵 Prérequis : <strong>Python 3.8+</strong> et <strong>pip</strong>.</div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">① Copiez les fichiers backend sur le serveur</div>
+                <div class="code-block" id="dep-srv-scp">scp -r python-api/* root@TARGET_IP:/opt/nmapper/</div>
+                <button class="dep-copy-btn" data-copy="dep-srv-scp">📋 Copier</button>
+              </div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">② Installez les dépendances Python</div>
+                <div class="code-block" id="dep-srv-pip">pip3 install fastapi 'uvicorn[standard]' slowapi bcrypt \
+  pyotp 'qrcode[pil]' pillow python-multipart pydantic starlette</div>
+                <button class="dep-copy-btn" data-copy="dep-srv-pip">📋 Copier</button>
+              </div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">③ Créez le dossier de stockage et lancez le backend</div>
+                <div class="code-block" id="dep-srv-run">mkdir -p /opt/nmapper/scans
+cd /opt/nmapper && python3 -m uvicorn main:asgi_app \
+  --host 0.0.0.0 --port 25774</div>
+                <button class="dep-copy-btn" data-copy="dep-srv-run">📋 Copier</button>
+              </div>
+
+              <div class="dep-manual-step">
+                <div class="dep-step-label">④ (Optionnel) Service systemd</div>
+                <div class="code-block" id="dep-srv-systemd">cat > /etc/systemd/system/nmapper-server.service &lt;&lt; 'EOF'
+[Unit]
+Description=NMAPPER Backend API
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/nmapper
+ExecStart=python3 -m uvicorn main:asgi_app --host 0.0.0.0 --port 25774
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable --now nmapper-server</div>
+                <button class="dep-copy-btn" data-copy="dep-srv-systemd">📋 Copier</button>
+              </div>
+
+              <div class="dep-prereq-badge" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25);color:#fbbf24;margin-top:8px;">
+                💡 La clé API est générée automatiquement au premier démarrage dans <code>/opt/nmapper/scans/.apikey</code>
+              </div>
+            </div>
+          </div>
+
+        </section>
+        <!-- /deploy -->
+
+        <!-- ===================== VUE : JOURNAL ===================== -->
+        <section class="view" id="view-activity">
+          <div class="filter-section">
+            <div class="filter-header">
+              <h3>📋 Journal d'activité</h3>
+            </div>
+            <div class="filter-content active">
+
+              <!-- Barre de filtres + actions -->
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+                <select id="act-filter-type" class="filter-input" style="width:auto;min-width:160px;">
+                  <option value="">Tous les types</option>
+                  <option value="scan">🎯 Scans</option>
+                  <option value="import">📥 Imports</option>
+                  <option value="export">📤 Exports</option>
+                  <option value="deploy">🚀 Déploiements</option>
+                  <option value="agent">📡 Agents</option>
+                  <option value="auth">🔑 Auth</option>
+                </select>
+                <select id="act-filter-date" class="filter-input" style="width:auto;min-width:160px;">
+                  <option value="">Toutes les dates</option>
+                  <option value="today">Aujourd'hui</option>
+                  <option value="7d">7 derniers jours</option>
+                  <option value="30d">30 derniers jours</option>
+                </select>
+                <input type="text" id="act-filter-q" class="filter-input"
+                       placeholder="Rechercher action, cible, détail…"
+                       style="flex:1;min-width:160px;">
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                  <button class="filter-btn" id="act-refresh-btn" title="Rafraîchir">🔄</button>
+                  <button class="filter-btn apply-btn" id="act-export-btn">⬇ CSV</button>
+                  <button class="filter-btn" id="act-clear-btn"
+                          style="color:var(--danger);border-color:var(--danger);">🗑 Effacer</button>
+                </div>
+              </div>
+
+              <!-- Compteur -->
+              <div style="font-size:12px;color:var(--txt-3);margin-bottom:8px;">
+                <span id="act-count">—</span>
+                <span style="margin-left:10px;font-style:italic;">Rafraîchissement automatique toutes les 30s</span>
+              </div>
+
+              <!-- Contenu -->
+              <div id="act-log-container">
+                <p style="color:var(--txt-3);text-align:center;padding:48px 0;font-size:13px;">
+                  Chargement du journal…</p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+        <!-- /activity -->
+
+        <!-- ===================== VUE : ADMINISTRATION ===================== -->
+        <section class="view" id="view-admin">
+
+          <!-- Accès refusé (non-admin) -->
+          <div id="admin-denied" style="display:none;" class="empty-state">
+            <div class="es-ic">🔒</div>
+            <h2>Accès restreint</h2>
+            <p>Cette section est réservée aux administrateurs.</p>
+          </div>
+
+          <!-- Contenu admin -->
+          <div id="admin-content">
+
+            <!-- Gestion des utilisateurs -->
+            <div class="filter-section">
+              <div class="filter-header" style="display:flex;align-items:center;gap:8px;">
+                <h3 style="flex:1;">👥 Utilisateurs</h3>
+                <button class="filter-btn apply-btn" onclick="AdminPanel.showAddModal()">+ Ajouter</button>
+              </div>
+              <div class="filter-content active">
+                <div id="admin-users-list">
+                  <p style="color:var(--txt-3);text-align:center;padding:24px;">Chargement…</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Matrice des permissions -->
+            <div class="filter-section">
+              <div class="filter-header"><h3>🔑 Permissions par rôle</h3></div>
+              <div class="filter-content active">
+                <table class="admin-perm-table">
+                  <thead>
+                    <tr><th>Fonctionnalité</th><th>👁️ Viewer</th><th>🔧 IT</th><th>👑 Admin</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>Dashboard & monitoring</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Cartographie & inventaire</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Filtres & scoring</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Rapports (lecture)</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Scanner actif</td><td class="perm-no">—</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Déploiement agents</td><td class="perm-no">—</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Modifier criticité</td><td class="perm-no">—</td><td class="perm-yes">✅</td><td class="perm-yes">✅</td></tr>
+                    <tr><td>Gestion utilisateurs</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✅</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div><!-- /admin-content -->
+
+          <!-- Modal ajout utilisateur -->
+          <div id="admin-modal" class="adm-modal-overlay" style="display:none;" onclick="if(event.target===this)AdminPanel.closeModal()">
+            <div class="adm-modal">
+              <div class="adm-modal-header">
+                <h3>Nouvel utilisateur</h3>
+                <button onclick="AdminPanel.closeModal()" class="popup-close">×</button>
+              </div>
+              <div class="adm-modal-body">
+                <div class="fg-field">
+                  <label class="fg-label">Nom d'utilisateur</label>
+                  <input type="text" id="adm-new-username" class="filter-input" placeholder="ex: jean.dupont" autocomplete="off">
+                </div>
+                <div class="fg-field">
+                  <label class="fg-label">Mot de passe (min 8 caractères)</label>
+                  <input type="password" id="adm-new-password" class="filter-input" placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <div class="fg-field">
+                  <label class="fg-label">Rôle</label>
+                  <select id="adm-new-role" class="filter-input">
+                    <option value="viewer">👁️ Viewer — lecture seule</option>
+                    <option value="it">🔧 IT — déploiement & scans</option>
+                    <option value="admin">👑 Admin — accès complet</option>
+                  </select>
+                </div>
+                <div id="adm-modal-error" style="color:var(--danger);font-size:12px;min-height:16px;"></div>
+                <div id="adm-qr-section" style="display:none;text-align:center;margin-top:12px;">
+                  <p style="color:var(--txt-2);font-size:13px;margin-bottom:8px;">Scannez ce QR code avec votre application TOTP :</p>
+                  <img id="adm-qr-img" src="" alt="QR Code MFA" style="max-width:200px;border-radius:8px;">
+                  <p style="color:var(--txt-3);font-size:11px;margin-top:8px;">Si vous ne pouvez pas scanner, entrez la clé manuellement :</p>
+                  <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;">
+                    <code id="adm-totp-secret" style="background:var(--bg-3);color:var(--accent);padding:4px 10px;border-radius:6px;font-size:12px;letter-spacing:1px;user-select:all;"></code>
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('adm-totp-secret').textContent)" title="Copier" style="background:none;border:none;cursor:pointer;color:var(--txt-2);font-size:14px;">📋</button>
+                  </div>
+                </div>
+              </div>
+              <div class="adm-modal-footer">
+                <button class="filter-btn" onclick="AdminPanel.closeModal()">Annuler</button>
+                <button class="scan-btn" id="adm-create-btn" onclick="AdminPanel.createUser()" style="padding:8px 20px;font-size:13px;">Créer</button>
+              </div>
+            </div>
+          </div>
+
+        </section>
+        <!-- /admin -->
+
+      </div><!-- /content -->
+    </div><!-- /main-area -->
+  </div><!-- /app-shell -->
+
+  <!-- Pop-up détails (global) -->
+  <div id="statsPopup" class="popup-overlay" data-action="closePopupOverlay">
+    <div class="popup-container">
+      <div class="popup-header">
+        <h3 id="popupTitle" class="popup-title"></h3>
+        <button class="popup-close" data-action="closePopup">×</button>
+      </div>
+      <div id="popupContent" class="popup-content"></div>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+</div>
+</body>
+</html>
