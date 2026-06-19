@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>IP Camera - Login</title>
+<meta charset="utf-8">
+<style>
+body { font-family: Arial; background: #1a1a2e; color: #eee; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+.box { background: #16213e; padding: 30px; border-radius: 8px; width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+h2 { color: #e94560; margin-top: 0; }
+input { width: 100%; padding: 8px; margin: 8px 0; background: #0f3460; border: 1px solid #e94560; color: #eee; border-radius: 4px; box-sizing: border-box; }
+button { width: 100%; padding: 10px; background: #e94560; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; }
+.info { font-size: 11px; color: #888; margin-top: 15px; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2 id="brand">IP Camera</h2>
+  <p id="model" style="color:#888; font-size:12px; margin-top:-10px;"></p>
+  <form>
+    <input type="text" placeholder="Username" value="admin">
+    <input type="password" placeholder="Password">
+    <button type="submit">Login</button>
+  </form>
+  <div class="info">
+    <div>Firmware: v4.2.1 build 220630</div>
+    <div>Web Plugin: Not installed</div>
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  // Brand set server-side via nginx header injection
+</script>
+</body>
+</html>

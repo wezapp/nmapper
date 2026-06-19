@@ -1,0 +1,439 @@
+version: '3.8'
+
+# =============================================================
+#  NMAPPER - TEST INFRASTRUCTURE
+#  Réseau d'entreprise réaliste pour tester NMAPPER
+#
+#  VLAN 10 : Corporate (postes Windows)
+#  VLAN 20 : Serveurs (web, BDD, mail, fichiers)
+#  VLAN 30 : IoT / OT (cameras, imprimantes, automates)
+#  VLAN 40 : DMZ (services exposés + services vulnérables)
+# =============================================================
+
+networks:
+  vlan10_corp:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+
+  vlan20_servers:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.20.0/24
+
+  vlan30_iot:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.30.0/24
+
+  vlan40_dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.40.0/24
+
+services:
+
+  # ═════════════════════════════════════════════════════════════
+  # VLAN 10 — CORPORATE : Postes de travail Windows
+  # ═════════════════════════════════════════════════════════════
+
+  # Contrôleur de domaine Windows
+  # Ports: 88 Kerberos, 135 RPC, 139/445 SMB, 389 LDAP, 636 LDAPS, 3268 GC, 3389 RDP
+  win-dc:
+    build: ./hosts/windows-ws
+    container_name: win-dc
+    hostname: WIN-DC01
+    environment:
+      HOST_TYPE: dc
+    networks:
+      vlan10_corp:
+        ipv4_address: 192.168.10.10
+    restart: unless-stopped
+
+  # Poste Windows 1
+  win-ws-1:
+    build: ./hosts/windows-ws
+    container_name: win-ws-1
+    hostname: WIN-WS001
+    environment:
+      HOST_TYPE: workstation
+    networks:
+      vlan10_corp:
+        ipv4_address: 192.168.10.11
+    restart: unless-stopped
+
+  # Poste Windows 2
+  win-ws-2:
+    build: ./hosts/windows-ws
+    container_name: win-ws-2
+    hostname: WIN-WS002
+    environment:
+      HOST_TYPE: workstation
+    networks:
+      vlan10_corp:
+        ipv4_address: 192.168.10.12
+    restart: unless-stopped
+
+  # Laptop
+  win-laptop:
+    build: ./hosts/windows-ws
+    container_name: win-laptop
+    hostname: WIN-LAPTOP01
+    environment:
+      HOST_TYPE: laptop
+    networks:
+      vlan10_corp:
+        ipv4_address: 192.168.10.20
+    restart: unless-stopped
+
+  # ═════════════════════════════════════════════════════════════
+  # VLAN 20 — SERVEURS : Infrastructure applicative
+  # ═════════════════════════════════════════════════════════════
+
+  # Serveur web Nginx (HTTP + HTTPS)
+  web-server:
+    image: nginx:alpine
+    container_name: web-server
+    hostname: web-srv-01
+    volumes:
+      - ./configs/nginx/webserver.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.10
+    restart: unless-stopped
+
+  # MySQL — mot de passe root vide (vulnérable)
+  db-mysql:
+    image: mysql:8
+    container_name: db-mysql
+    hostname: db-mysql-01
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: production
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.11
+    restart: unless-stopped
+
+  # PostgreSQL
+  db-postgres:
+    image: postgres:15-alpine
+    container_name: db-postgres
+    hostname: db-postgres-01
+    environment:
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: appdb
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.12
+    restart: unless-stopped
+
+  # Redis — sans authentification (vulnérable)
+  db-redis:
+    image: redis:alpine
+    container_name: db-redis
+    hostname: cache-redis-01
+    command: redis-server --protected-mode no --bind 0.0.0.0
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.13
+    restart: unless-stopped
+
+  # MongoDB — sans authentification (vulnérable)
+  db-mongo:
+    image: mongo:6
+    container_name: db-mongo
+    hostname: db-mongo-01
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ""
+      MONGO_INITDB_ROOT_PASSWORD: ""
+    command: mongod --noauth --bind_ip_all
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.14
+    restart: unless-stopped
+
+  # Elasticsearch — sans sécurité (vulnérable, exposé sur réseau)
+  elasticsearch:
+    image: elasticsearch:7.17.15
+    container_name: elasticsearch
+    hostname: elk-es-01
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - network.host=0.0.0.0
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.15
+    restart: unless-stopped
+
+  # FTP — login anonyme activé (vulnérable)
+  ftp-server:
+    build: ./hosts/ftp-server
+    container_name: ftp-server
+    hostname: ftp-srv-01
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.16
+    restart: unless-stopped
+
+  # SSH — accès par mot de passe
+  ssh-server:
+    image: linuxserver/openssh-server:latest
+    container_name: ssh-server
+    hostname: ssh-srv-01
+    environment:
+      PUID: 1000
+      PGID: 1000
+      USER_NAME: admin
+      USER_PASSWORD: password123
+      PASSWORD_ACCESS: "true"
+      SUDO_ACCESS: "true"
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.17
+    restart: unless-stopped
+
+  # Serveur de messagerie (SMTP + IMAP)
+  mail-server:
+    build: ./hosts/mail-server
+    container_name: mail-server
+    hostname: mail-srv-01
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.18
+    restart: unless-stopped
+
+  # Serveur de fichiers Samba (SMB/CIFS)
+  smb-server:
+    image: dperson/samba:latest
+    container_name: smb-server
+    hostname: fs-samba-01
+    command: >
+      -u "shareuser;Passw0rd!"
+      -s "shared;/shared;yes;no;no;all"
+      -s "backup;/backup;no;no;no;shareuser"
+      -s "finance;/finance;no;no;no;shareuser"
+    networks:
+      vlan20_servers:
+        ipv4_address: 192.168.20.19
+    restart: unless-stopped
+
+  # ═════════════════════════════════════════════════════════════
+  # VLAN 30 — IoT / OT : Équipements connectés et industriels
+  # ═════════════════════════════════════════════════════════════
+
+  # Caméra IP 1 — Hikvision
+  camera-1:
+    build: ./hosts/camera
+    container_name: camera-1
+    hostname: ipcam-hvk-01
+    environment:
+      CAMERA_BRAND: Hikvision
+      CAMERA_MODEL: DS-2CD2143G2-I
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.10
+    restart: unless-stopped
+
+  # Caméra IP 2 — Dahua
+  camera-2:
+    build: ./hosts/camera
+    container_name: camera-2
+    hostname: ipcam-dah-02
+    environment:
+      CAMERA_BRAND: Dahua
+      CAMERA_MODEL: IPC-HDW2831T-AS
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.11
+    restart: unless-stopped
+
+  # Caméra IP 3 — Axis
+  camera-3:
+    build: ./hosts/camera
+    container_name: camera-3
+    hostname: ipcam-axis-03
+    environment:
+      CAMERA_BRAND: Axis
+      CAMERA_MODEL: P3245-V
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.12
+    restart: unless-stopped
+
+  # Imprimante réseau HP LaserJet
+  printer-hp:
+    build: ./hosts/printer
+    container_name: printer-hp
+    hostname: printer-hp-01
+    environment:
+      PRINTER_BRAND: HP
+      PRINTER_MODEL: "LaserJet Pro M404n"
+      PRINTER_SERIAL: VNC3Q12345
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.20
+    restart: unless-stopped
+
+  # Imprimante réseau Epson
+  printer-epson:
+    build: ./hosts/printer
+    container_name: printer-epson
+    hostname: printer-epson-01
+    environment:
+      PRINTER_BRAND: Epson
+      PRINTER_MODEL: "WorkForce Pro WF-4830"
+      PRINTER_SERIAL: X6GK023456
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.21
+    restart: unless-stopped
+
+  # Automate industriel — Modbus TCP (port critique ICS)
+  ics-modbus:
+    build: ./hosts/ics-device
+    container_name: ics-modbus
+    hostname: plc-modbus-01
+    environment:
+      DEVICE_TYPE: modbus
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.30
+    restart: unless-stopped
+
+  # Automate Siemens S7 (port critique ICS)
+  ics-s7:
+    build: ./hosts/ics-device
+    container_name: ics-s7
+    hostname: plc-siemens-01
+    environment:
+      DEVICE_TYPE: s7plc
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.31
+    restart: unless-stopped
+
+  # Passerelle IoT OPC-UA
+  ics-opcua:
+    build: ./hosts/ics-device
+    container_name: ics-opcua
+    hostname: opcua-gateway-01
+    environment:
+      DEVICE_TYPE: opcua
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.32
+    restart: unless-stopped
+
+  # Broker MQTT — sans authentification (vulnérable)
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt-broker
+    hostname: iot-mqtt-hub
+    volumes:
+      - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.40
+    restart: unless-stopped
+
+  # Switch réseau simulé — SNMP community "public"
+  snmp-switch:
+    build: ./hosts/ics-device
+    container_name: snmp-switch
+    hostname: sw-core-01
+    environment:
+      DEVICE_TYPE: switch
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.50
+    restart: unless-stopped
+
+  # Smart TV / Media device
+  smart-tv:
+    build: ./hosts/ics-device
+    container_name: smart-tv
+    hostname: smarttv-room101
+    environment:
+      DEVICE_TYPE: smarttv
+    networks:
+      vlan30_iot:
+        ipv4_address: 192.168.30.60
+    restart: unless-stopped
+
+  # ═════════════════════════════════════════════════════════════
+  # VLAN 40 — DMZ : Services exposés + hôtes vulnérables
+  # ═════════════════════════════════════════════════════════════
+
+  # Serveur web DMZ multi-ports
+  dmz-web:
+    image: nginx:alpine
+    container_name: dmz-web
+    hostname: dmz-web-01
+    volumes:
+      - ./configs/nginx/dmz.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.10
+    restart: unless-stopped
+
+  # DVWA — Application web délibérément vulnérable
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    container_name: dvwa
+    hostname: dvwa-server
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.11
+    restart: unless-stopped
+
+  # Serveur Telnet legacy (port CRITIQUE selon NMAPPER)
+  telnet-host:
+    build: ./hosts/telnet-host
+    container_name: telnet-host
+    hostname: legacy-telnet-01
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.20
+    restart: unless-stopped
+
+  # FTP anonyme legacy
+  ftp-legacy:
+    build: ./hosts/ftp-server
+    container_name: ftp-legacy
+    hostname: legacy-ftp-01
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.21
+    restart: unless-stopped
+
+  # Passerelle VPN (ports simulés)
+  vpn-gateway:
+    build: ./hosts/ics-device
+    container_name: vpn-gateway
+    hostname: vpn-gw-01
+    environment:
+      DEVICE_TYPE: vpn
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.30
+    restart: unless-stopped
+
+  # Hôte très exposé — 10+ ports ouverts (vulnérable NMAPPER)
+  exposed-host:
+    build: ./hosts/ics-device
+    container_name: exposed-host
+    hostname: exposed-srv-01
+    environment:
+      DEVICE_TYPE: exposed
+    networks:
+      vlan40_dmz:
+        ipv4_address: 192.168.40.40
+    restart: unless-stopped

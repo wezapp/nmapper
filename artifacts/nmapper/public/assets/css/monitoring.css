@@ -1,0 +1,299 @@
+/* monitoring.css — Styles pour la vue Monitoring NMAPPER v2 */
+
+/* ── Mode toggle ─────────────────────────────────────────────────────────── */
+.mon-mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.mon-mode-btn {
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: 1.5px solid var(--stroke-soft, rgba(255,255,255,0.1));
+    background: transparent;
+    color: var(--txt-2, #8b949e);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .18s ease;
+    font-weight: 500;
+}
+
+.mon-mode-btn:hover {
+    border-color: var(--accent, #3b82f6);
+    color: var(--accent, #3b82f6);
+}
+
+.mon-mode-btn.active {
+    background: var(--accent, #3b82f6);
+    border-color: var(--accent, #3b82f6);
+    color: #fff;
+}
+
+/* ── Stats bar ───────────────────────────────────────────────────────────── */
+#mon-status-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--txt-2, #8b949e);
+}
+
+#mon-status-bar span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#mon-stat-vuln {
+    color: #f59e0b;
+}
+
+/* ── Graph container ─────────────────────────────────────────────────────── */
+#mon-graph {
+    width: 100%;
+    min-height: 440px;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#mon-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--txt-3, #6e7681);
+    font-size: 14px;
+    background: var(--bg-card, #161b22);
+    border-radius: 8px;
+    border: 1px dashed var(--stroke-soft, rgba(255,255,255,0.1));
+}
+
+/* ── Agent rows ──────────────────────────────────────────────────────────── */
+.mon-agent-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: var(--bg-card2, rgba(255,255,255,0.03));
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.mon-agent-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+}
+
+/* ── Event rows ──────────────────────────────────────────────────────────── */
+.mon-event-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    border-left: 3px solid transparent;
+}
+
+.mon-event-info   { border-left-color: #3b82f6; background: rgba(59,130,246,.07); }
+.mon-event-warn   { border-left-color: #f59e0b; background: rgba(245,158,11,.07); }
+.mon-event-danger { border-left-color: #f43f5e; background: rgba(244,63,94,.07);  }
+
+.mon-event-time {
+    color: var(--txt-3, #6e7681);
+    font-size: 11px;
+    min-width: 56px;
+    flex-shrink: 0;
+}
+
+.mon-event-icon { flex-shrink: 0; }
+
+/* ── Passphrase choice modal ─────────────────────────────────────────────── */
+.enc-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+}
+
+.enc-modal-overlay.show { opacity: 1; pointer-events: all; }
+
+.enc-modal-card {
+    background: var(--bg-card, #1c2128);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.12));
+    border-radius: 14px;
+    padding: 28px 32px;
+    width: min(460px, 92vw);
+    box-shadow: 0 24px 60px rgba(0,0,0,.55);
+    transform: translateY(8px);
+    transition: transform .22s ease;
+}
+
+.enc-modal-overlay.show .enc-modal-card { transform: translateY(0); }
+
+.enc-modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--txt-1, #e6edf3);
+    margin-bottom: 4px;
+}
+
+.enc-modal-sub {
+    font-size: 12px;
+    color: var(--txt-3, #6e7681);
+}
+
+/* Choice options */
+.enc-choice-group { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+.enc-choice-opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 9px;
+    border: 1.5px solid var(--stroke-soft, rgba(255,255,255,0.1));
+    cursor: pointer;
+    transition: border-color .15s;
+}
+
+.enc-choice-opt:has(input:checked) {
+    border-color: var(--accent, #3b82f6);
+    background: rgba(59,130,246,.08);
+}
+
+.enc-choice-opt input[type="radio"] { margin-top: 3px; accent-color: var(--accent, #3b82f6); flex-shrink: 0; }
+
+.enc-choice-opt strong { font-size: 13px; color: var(--txt-1, #e6edf3); }
+
+.enc-choice-opt p { font-size: 11px; color: var(--txt-3, #6e7681); margin: 3px 0 0; }
+
+.enc-badge-rec {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    background: rgba(34,197,94,.15);
+    color: #22c55e;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Custom pwd input */
+.enc-pwd-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 7px;
+    border: 1.5px solid var(--stroke-soft, rgba(255,255,255,0.1));
+    background: var(--bg-input, rgba(255,255,255,0.04));
+    color: var(--txt-1, #e6edf3);
+    font-size: 13px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color .15s;
+}
+.enc-pwd-input:focus { border-color: var(--accent, #3b82f6); }
+
+/* Modal actions */
+.enc-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 22px;
+}
+
+.enc-cancel-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1.5px solid var(--stroke-soft, rgba(255,255,255,0.1));
+    background: transparent;
+    color: var(--txt-2, #8b949e);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all .15s;
+}
+.enc-cancel-btn:hover { border-color: var(--txt-2); color: var(--txt-1, #e6edf3); }
+
+.enc-ok-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent, #3b82f6);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter .15s;
+}
+.enc-ok-btn:hover { filter: brightness(1.12); }
+
+/* Password display modal */
+.enc-warning {
+    background: rgba(245,158,11,.12);
+    border: 1px solid rgba(245,158,11,.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--txt-2, #8b949e);
+    margin: 14px 0;
+    line-height: 1.6;
+}
+
+.enc-password-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-input, rgba(255,255,255,0.04));
+    border: 1.5px solid var(--stroke-soft, rgba(255,255,255,0.1));
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+}
+
+.enc-password-value {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #22c55e;
+    word-break: break-all;
+    letter-spacing: .04em;
+}
+
+.enc-copy-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background .12s;
+}
+.enc-copy-btn:hover { background: rgba(255,255,255,0.08); }
+
+/* ── Agent instructions code block ───────────────────────────────────────── */
+#mon-agent-instructions .code-block {
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}

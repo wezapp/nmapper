@@ -1,0 +1,9 @@
+{
+  "admin": {
+    "password_hash": "$2b$12$k.zbjHy/YQmm1uNo3K/OIuWTGTkpKC5u1sEQh5/ZERafqeDOzy50y",
+    "totp_secret": "BO7HWDVUL6N6VPIA4HF7LEWM4VVU4XTK",
+    "created_at": 1781727051.5231457,
+    "mfa_verified": true,
+    "role": "admin"
+  }
+}
